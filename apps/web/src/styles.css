@@ -337,11 +337,12 @@ button { cursor: pointer; }
   .contractor-object { min-height:220px; scroll-snap-align:start; }
   .contractor-dashboard-grid { display:flex; flex-direction:column; gap:10px; margin-top:18px; }
   .contractor-panel { padding:13px; }
-  .contractor-task-list>button { grid-template-columns:3px minmax(0,1fr) auto; }
-  .contractor-task-list .task-tone { height:100%; min-height:45px; grid-row:1/3; }
-  .contractor-task-list__name { grid-column:2; }
+  .contractor-task-list>button { grid-template-columns:3px minmax(0,1fr) 24px; grid-template-rows:auto auto; column-gap:9px; row-gap:7px; }
+  .contractor-task-list .task-tone { height:100%; min-height:45px; grid-column:1; grid-row:1/3; }
+  .contractor-task-list__name { grid-column:2; grid-row:1; }
   .contractor-task-list>button>span:nth-of-type(3),.contractor-task-list>button>span:nth-of-type(4),.contractor-task-list>button>span:nth-of-type(5){display:none}
-  .contractor-task-list__progress { grid-column:2/4; }
+  .contractor-task-list__progress { grid-column:2/4; grid-row:2; }
+  .contractor-task-list>button>svg { grid-column:3; grid-row:1; align-self:center; justify-self:center; }
   .contractor-panel>footer { justify-content:stretch; }.contractor-panel>footer button{flex:1;justify-content:center}
   .contractor-mobile-nav { position:absolute;z-index:8;right:0;bottom:0;left:0;display:grid;grid-template-columns:repeat(4,1fr);min-height:65px;padding:7px 7px 9px;border-top:1px solid #dfe6ef;background:rgba(255,255,255,.94);box-shadow:0 -12px 28px rgba(23,55,102,.08);backdrop-filter:blur(18px) }
   .contractor-mobile-nav button { position:relative;display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;border-radius:12px;color:#8490a4;background:transparent }.contractor-mobile-nav button.is-active{color:#0968f4;background:#eff6ff}.contractor-mobile-nav span{font-size:9px;font-weight:650}.contractor-mobile-nav i{position:absolute;top:4px;right:calc(50% - 18px);display:grid;min-width:14px;height:14px;padding:0 3px;place-items:center;border:2px solid #fff;border-radius:99px;color:#fff;background:#f05d35;font-size:8px;font-style:normal}
