@@ -1,9 +1,10 @@
-import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Inject, Post, Query, Req, Res } from '@nestjs/common'
-import type { ApiError, LoginRequest, LoginResponse, Permission } from '@smena/contracts'
+import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Post, Put, Query, Req, Res } from '@nestjs/common'
+import type { ApiError, LoginRequest, LoginResponse, MemberListResponse, Permission, UpdateMemberObjectsRequest, UpdateMemberObjectsResponse } from '@smena/contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { can } from './modules/access/policy.js'
 import { AuthService } from './modules/auth/auth.service.js'
 import { IdentityContextService } from './modules/identity/identity-context.service.js'
+import { MembersService } from './modules/members/members.service.js'
 
 const sessionCookieName = 'smena_session'
 
@@ -32,6 +33,7 @@ export class AppController {
   constructor(
     @Inject(IdentityContextService) private readonly identityService: IdentityContextService,
     @Inject(AuthService) private readonly authService: AuthService,
+    @Inject(MembersService) private readonly membersService: MembersService,
   ) {}
 
   @Get('/health')
@@ -86,5 +88,35 @@ export class AppController {
     const context = await this.identityService.getContextForUser(userId, 'development')
     if (!context) throw new HttpException({ code: 'ACCESS_NOT_ASSIGNED', message: 'Access is not assigned.' }, HttpStatus.FORBIDDEN)
     return { allowed: can(context.user.role, action) }
+  }
+
+  @Get('/api/v1/members')
+  async members(@Req() request: FastifyRequest): Promise<MemberListResponse> {
+    const context = await this.authorizedContext(request, 'member.manage')
+    return { members: await this.membersService.list(context.organization.id) }
+  }
+
+  @Put('/api/v1/members/:memberId/objects')
+  async updateMemberObjects(
+    @Req() request: FastifyRequest,
+    @Param('memberId') memberId: string,
+    @Body() body: Partial<UpdateMemberObjectsRequest>,
+  ): Promise<UpdateMemberObjectsResponse> {
+    const context = await this.authorizedContext(request, 'member.manage')
+    if (!Array.isArray(body.objectIds) || body.objectIds.some((id) => typeof id !== 'string')) {
+      throw new HttpException({ code: 'INVALID_OBJECT_IDS', message: 'Передайте корректный список объектов.' }, HttpStatus.BAD_REQUEST)
+    }
+    return { member: await this.membersService.updateObjectAssignments(context.organization.id, memberId, body.objectIds) }
+  }
+
+  private async authorizedContext(request: FastifyRequest, permission: Permission) {
+    const userId = await this.authService.authenticate(sessionToken(request))
+    if (!userId) throw new HttpException({ code: 'SESSION_REQUIRED', message: 'Войдите, чтобы продолжить.' }, HttpStatus.UNAUTHORIZED)
+    const environment = process.env.NODE_ENV === 'production' ? 'production' : 'development'
+    const context = await this.identityService.getContextForUser(userId, environment)
+    if (!context || !can(context.user.role, permission)) {
+      throw new HttpException({ code: 'ACCESS_DENIED', message: 'Недостаточно прав для этого действия.' }, HttpStatus.FORBIDDEN)
+    }
+    return context
   }
 }

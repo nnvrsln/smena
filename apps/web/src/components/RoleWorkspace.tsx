@@ -1,11 +1,12 @@
-import type { MeContextResponse, NavigationKey, ObjectSummary } from '@smena/contracts'
+import type { MeContextResponse, MemberSummary, NavigationKey, ObjectSummary, Role } from '@smena/contracts'
 import {
   AlertTriangle, ArrowUpRight, BarChart3, Bell, Building2, CalendarDays, CheckCircle2,
   ChevronDown, ChevronRight, ClipboardList, Clock3, Download, FileText, HardHat, Home,
-  LogOut, Menu, MessageCircle, MoreHorizontal, Plus, Search, Settings, SlidersHorizontal, Users,
+  LoaderCircle, LogOut, Menu, MessageCircle, MoreHorizontal, Plus, Search, Settings, SlidersHorizontal, Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { loadMembers, updateMemberObjects } from '../api/context'
 import { Brand } from './Brand'
 
 const navigationIcons: Record<NavigationKey, LucideIcon> = {
@@ -30,6 +31,7 @@ export function RoleWorkspace({ context, onLogout }: { context: MeContextRespons
 function ContractorWorkspace({ context, onLogout }: { context: MeContextResponse; onLogout: () => void }) {
   const [search, setSearch] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
+  const [activeSection, setActiveSection] = useState<'overview' | 'team'>('overview')
   const peoplePresent = context.objects.reduce((sum, object) => sum + object.presentWorkers, 0)
   const peoplePlanned = context.objects.reduce((sum, object) => sum + object.plannedWorkers, 0)
   const issueCount = context.objects.reduce((sum, object) => sum + object.issueCount, 0)
@@ -57,18 +59,19 @@ function ContractorWorkspace({ context, onLogout }: { context: MeContextResponse
       <aside className="contractor-sidebar">
         <Brand />
         <div className="contractor-sidebar__object"><span>Организация</span><button type="button" onClick={() => notify('Переключение организаций появится в F02')}><span className="object-mini-logo">{context.organization.name.slice(0, 2).toUpperCase()}</span><span><b>{context.organization.name}</b><small>{context.objects.length} активных объекта</small></span><ChevronDown size={16} /></button></div>
-        <nav aria-label="Кабинет подрядчика">{context.navigation.map((item, index) => { const Icon = navigationIcons[item.key]; return <button type="button" className={index === 0 ? 'is-active' : ''} onClick={() => index ? notify(`${item.label}: следующий экран production-карты`) : undefined} key={item.key}><Icon size={19} strokeWidth={2.1} /><span>{item.label}</span>{item.key === 'tasks' && issueCount ? <small>{issueCount}</small> : null}</button> })}</nav>
+        <nav aria-label="Кабинет подрядчика">{context.navigation.map((item) => { const Icon = navigationIcons[item.key]; const available = item.key === 'overview' || item.key === 'team'; return <button type="button" className={activeSection === item.key ? 'is-active' : ''} onClick={() => { if (available) { setActiveSection(item.key as 'overview' | 'team'); setSearch('') } else notify(`${item.label}: следующий экран production-карты`) }} key={item.key}><Icon size={19} strokeWidth={2.1} /><span>{item.label}</span>{item.key === 'tasks' && issueCount ? <small>{issueCount}</small> : null}</button> })}</nav>
         <div className="contractor-sidebar__footer"><button type="button" onClick={() => notify('Настройки будут подключены отдельным срезом')}><Settings size={19} />Настройки</button><div className="contractor-profile"><span className="contractor-avatar">{context.user.initials}</span><span><b>{context.user.displayName}</b><small>Подрядчик</small></span><button type="button" onClick={onLogout} aria-label="Выйти"><LogOut size={18} /></button></div></div>
       </aside>
 
       <div className="contractor-workspace">
         <header className="contractor-topbar">
           <button className="contractor-menu" type="button" aria-label="Открыть меню" onClick={() => notify('Меню разделов')}><Menu size={21} /></button><div className="contractor-mobile-brand"><Brand compact /></div>
-          <label className="contractor-search"><Search size={18} /><input aria-label="Поиск" placeholder="Найти объект" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
+          <label className="contractor-search"><Search size={18} /><input aria-label="Поиск" placeholder={activeSection === 'team' ? 'Найти сотрудника' : 'Найти объект'} value={search} onChange={(event) => setSearch(event.target.value)} /></label>
           <div className="contractor-topbar__actions"><button className="contractor-date" type="button" onClick={() => notify('Показываем оперативные данные за сегодня')}><CalendarDays size={17} />Сегодня<ChevronDown size={15} /></button><button className="contractor-icon-button" type="button" aria-label="Уведомления" onClick={() => notify(`${issueCount} событий требуют внимания`)}><Bell size={20} />{issueCount ? <i>{issueCount}</i> : null}</button><button className="contractor-create" type="button" onClick={() => notify('Создание задачи начнётся в S01')}><Plus size={19} /><span>Новая задача</span></button></div>
         </header>
 
         <div className="contractor-content">
+          {activeSection === 'team' ? <ContractorTeamView context={context} search={search} notify={notify} /> : <>
           <section className="contractor-welcome"><div><span>Оперативная сводка</span><h1>Доброе утро, {context.user.displayName.split(' ')[0]}</h1><p>На {context.objects.length} объектах работают {peoplePresent} человек. {issueCount ? `${issueCount} события требуют решения.` : 'Событий, требующих решения, нет.'}</p></div><div className="contractor-welcome__sync"><CheckCircle2 size={16} /><span><b>Данные актуальны</b><small>PostgreSQL · обновлено сейчас</small></span></div></section>
 
           <section className="contractor-metrics" aria-label="Оперативные показатели">{metrics.map(({ label, value, suffix, detail, note, badge, progress, tone, icon: Icon, background }) => <article className={`contractor-metric contractor-metric--${tone}`} key={label}><img className="contractor-metric__background" src={background} alt="" aria-hidden="true" /><header className="contractor-metric__header"><span className="contractor-metric__icon"><Icon size={18} /></span><span className="contractor-metric__label">{label}</span><span className="contractor-metric__badge">{badge}</span></header><div className="contractor-metric__value"><strong>{value}</strong><span>{suffix}</span></div><p className="contractor-metric__detail">{detail}</p><footer className="contractor-metric__footer"><span>{note}</span>{typeof progress === 'number' ? <i aria-label={`${progress}%`}><b style={{ width: `${progress}%` }} /></i> : null}</footer></article>)}</section>
@@ -79,12 +82,92 @@ function ContractorWorkspace({ context, onLogout }: { context: MeContextResponse
             <section className="contractor-panel contractor-panel--attention"><header><div><span>Приоритет</span><h2>Требует внимания</h2></div><strong>{issueCount}</strong></header><div className="contractor-attention-list">{attentionObjects.length ? attentionObjects.map((object) => <button type="button" onClick={() => notify(`Открываем события: ${object.name}`)} key={object.id}><span className="attention-dot attention-dot--critical"><AlertTriangle size={16} /></span><span><small>Контроль объекта</small><b>{object.issueCount} {object.issueCount === 1 ? 'событие требует' : 'события требуют'} решения</b><em>{object.name} · {object.code}</em></span><time>сейчас</time><ChevronRight size={16} /></button>) : <div className="contractor-panel-empty"><CheckCircle2 size={18} />Нет событий, требующих решения</div>}</div></section>
             <section className="contractor-panel contractor-panel--tasks"><header><div><span>План / факт</span><h2>Ход работ по объектам</h2></div><button type="button" onClick={() => notify('Фильтры подключим к задачам в S01')}><SlidersHorizontal size={17} />Фильтр</button></header><div className="contractor-task-list">{context.objects.map((object, index) => <button type="button" onClick={() => notify(`Открываем ход работ: ${object.name}`)} key={object.id}><span className={`task-tone task-tone--${index === 1 ? 'green' : index === 2 ? 'orange' : 'blue'}`} /><span className="contractor-task-list__name"><b>{object.name}</b><small>{object.code} · {object.presentWorkers} человек</small></span><span><small>План дня</small><b>100%</b></span><span><small>Факт</small><b>{object.dayProgress}%</b></span><span><small>Явка</small><b>{object.presentWorkers}/{object.plannedWorkers}</b></span><span className="contractor-task-list__progress"><i><em style={{ width: `${object.dayProgress}%` }} /></i><b>{object.dayProgress}%</b></span><ChevronRight size={16} /></button>)}</div><footer><button type="button" onClick={() => notify('Формирование сводки появится после S01')}><Download size={16} />Скачать сводку</button><button type="button" onClick={() => notify('Все задачи появятся в S01')}>Открыть все задачи<ArrowUpRight size={15} /></button></footer></section>
           </div>
+          </>}
         </div>
-        <nav className="contractor-mobile-nav" aria-label="Навигация подрядчика"><button className="is-active" type="button"><Home size={19} /><span>Обзор</span></button><button type="button" onClick={() => notify('Объекты')}><Building2 size={19} /><span>Объекты</span></button><button type="button" onClick={() => notify('Задачи появятся в S01')}><ClipboardList size={19} /><span>Задачи</span>{issueCount ? <i>{issueCount}</i> : null}</button><button type="button" onClick={() => notify('Команда появится в F02')}><Users size={19} /><span>Команда</span></button></nav>
+        <nav className="contractor-mobile-nav" aria-label="Навигация подрядчика"><button className={activeSection === 'overview' ? 'is-active' : ''} type="button" onClick={() => { setActiveSection('overview'); setSearch('') }}><Home size={19} /><span>Обзор</span></button><button type="button" onClick={() => notify('Раздел объектов продолжим после F02')}><Building2 size={19} /><span>Объекты</span></button><button type="button" onClick={() => notify('Задачи появятся в S01')}><ClipboardList size={19} /><span>Задачи</span>{issueCount ? <i>{issueCount}</i> : null}</button><button className={activeSection === 'team' ? 'is-active' : ''} type="button" onClick={() => { setActiveSection('team'); setSearch('') }}><Users size={19} /><span>Команда</span></button></nav>
         {notice ? <div className="contractor-toast" role="status">{notice}</div> : null}
       </div>
     </section>
   )
+}
+
+const memberRoleLabels: Record<Role, string> = { contractor: 'Подрядчик', foreman: 'Бригадир', worker: 'Рабочий' }
+
+function ContractorTeamView({ context, search, notify }: { context: MeContextResponse; search: string; notify: (message: string) => void }) {
+  const [members, setMembers] = useState<MemberSummary[]>([])
+  const [drafts, setDrafts] = useState<Record<string, string[]>>({})
+  const [roleFilter, setRoleFilter] = useState<'all' | 'foreman' | 'worker'>('all')
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [savingId, setSavingId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setStatus('loading')
+    loadMembers(controller.signal)
+      .then(({ members: nextMembers }) => {
+        setMembers(nextMembers)
+        setDrafts(Object.fromEntries(nextMembers.map((member) => [member.id, member.objectIds])))
+        setStatus('ready')
+      })
+      .catch((reason: unknown) => {
+        if (controller.signal.aborted) return
+        setError(reason instanceof Error ? reason.message : 'Не удалось загрузить сотрудников.')
+        setStatus('error')
+      })
+    return () => controller.abort()
+  }, [])
+
+  const visibleMembers = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase('ru-RU')
+    return members.filter((member) => {
+      const matchesRole = roleFilter === 'all' || member.role === roleFilter
+      const matchesSearch = !query || `${member.displayName} ${member.phone} ${memberRoleLabels[member.role]}`.toLocaleLowerCase('ru-RU').includes(query)
+      return matchesRole && matchesSearch
+    })
+  }, [members, roleFilter, search])
+
+  function toggleObject(memberId: string, objectId: string) {
+    setDrafts((current) => {
+      const assigned = current[memberId] ?? []
+      return { ...current, [memberId]: assigned.includes(objectId) ? assigned.filter((id) => id !== objectId) : [...assigned, objectId] }
+    })
+  }
+
+  async function save(member: MemberSummary) {
+    const objectIds = drafts[member.id] ?? []
+    setSavingId(member.id)
+    setError(null)
+    try {
+      const response = await updateMemberObjects(member.id, objectIds)
+      setMembers((current) => current.map((item) => item.id === member.id ? response.member : item))
+      setDrafts((current) => ({ ...current, [member.id]: response.member.objectIds }))
+      notify(`Назначения сотрудника «${member.displayName}» сохранены`)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Не удалось сохранить назначения.')
+    } finally {
+      setSavingId(null)
+    }
+  }
+
+  return <section className="contractor-team">
+    <header className="contractor-team__hero"><div><span>Сотрудники и доступ</span><h1>Команда организации</h1><p>Управляйте доступом сотрудников к объектам. Изменения сразу применяются сервером и влияют на данные каждой роли.</p></div><button type="button" onClick={() => notify('Приглашения сотрудников — следующий шаг F02')}><Plus size={18} />Пригласить сотрудника</button></header>
+    <div className="contractor-team__summary"><article><Users size={19} /><span><b>{members.length}</b><small>всего сотрудников</small></span></article><article><HardHat size={19} /><span><b>{members.filter((member) => member.role === 'worker').length}</b><small>рабочих</small></span></article><article><Building2 size={19} /><span><b>{context.objects.length}</b><small>активных объекта</small></span></article><div className="contractor-team__filters"><button className={roleFilter === 'all' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('all')}>Все</button><button className={roleFilter === 'foreman' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('foreman')}>Бригадиры</button><button className={roleFilter === 'worker' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('worker')}>Рабочие</button></div></div>
+    {error ? <div className="contractor-team__error"><AlertTriangle size={17} />{error}</div> : null}
+    {status === 'loading' ? <div className="contractor-team__state"><LoaderCircle className="spin" size={22} />Загружаем сотрудников из PostgreSQL</div> : null}
+    {status === 'error' ? <div className="contractor-team__state"><AlertTriangle size={22} />Список сотрудников временно недоступен</div> : null}
+    {status === 'ready' ? <div className="contractor-member-list">{visibleMembers.map((member) => {
+      const draft = drafts[member.id] ?? []
+      const changed = [...draft].sort().join(',') !== [...member.objectIds].sort().join(',')
+      const immutable = member.role === 'contractor'
+      return <article className="contractor-member" key={member.id}>
+        <div className={`contractor-member__avatar contractor-member__avatar--${member.role}`}>{member.initials}</div>
+        <div className="contractor-member__identity"><span><b>{member.displayName}</b><em>{memberRoleLabels[member.role]}</em></span><small>{member.phone}</small></div>
+        <div className="contractor-member__scope"><small>{immutable ? 'Доступ владельца' : 'Назначения на объекты'}</small><div>{immutable ? <span className="contractor-member__all"><CheckCircle2 size={14} />Вся организация</span> : context.objects.map((object) => <button className={draft.includes(object.id) ? 'is-selected' : ''} type="button" onClick={() => toggleObject(member.id, object.id)} key={object.id}><span>{draft.includes(object.id) ? <CheckCircle2 size={14} /> : <Building2 size={14} />}</span>{object.name}<small>{object.code}</small></button>)}</div></div>
+        <div className="contractor-member__action">{immutable ? <span>Владелец</span> : <button type="button" disabled={!changed || savingId === member.id} onClick={() => save(member)}>{savingId === member.id ? <LoaderCircle className="spin" size={15} /> : <CheckCircle2 size={15} />}{savingId === member.id ? 'Сохраняем' : changed ? 'Сохранить' : 'Сохранено'}</button>}</div>
+      </article>
+    })}{visibleMembers.length === 0 ? <div className="contractor-team__state"><Search size={22} />Сотрудники по заданным условиям не найдены</div> : null}</div> : null}
+  </section>
 }
 
 function ContractorObjectCard({ object, index, onOpen }: { object: ObjectSummary; index: number; onOpen: () => void }) {

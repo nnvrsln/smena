@@ -81,6 +81,28 @@ export interface LoginResponse {
   context: MeContextResponse
 }
 
+export interface MemberSummary {
+  id: string
+  displayName: string
+  initials: string
+  phone: string
+  role: Role
+  status: 'active' | 'inactive'
+  objectIds: string[]
+}
+
+export interface MemberListResponse {
+  members: MemberSummary[]
+}
+
+export interface UpdateMemberObjectsRequest {
+  objectIds: string[]
+}
+
+export interface UpdateMemberObjectsResponse {
+  member: MemberSummary
+}
+
 export interface ApiError {
   code: string
   message: string
