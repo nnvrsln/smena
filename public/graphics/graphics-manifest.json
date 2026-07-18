@@ -1,0 +1,29 @@
+{
+  "pack": "SMENA Construction Graphics",
+  "version": 4,
+  "transparentAssets": true,
+  "backgroundsOpaque": true,
+  "palette": ["#0758ED", "#0B8EFF", "#25C8E8", "#FF5C2D", "#102149"],
+  "assets": [
+    { "file": "svg/brand-mark.svg", "category": "icon", "transparent": true },
+    { "file": "svg/tile-module.svg", "category": "icon", "transparent": true },
+    { "file": "svg/worker-hardhat.svg", "category": "illustration", "transparent": true },
+    { "file": "svg/construction-crane.svg", "category": "illustration", "transparent": true },
+    { "file": "svg/blueprint-grid.svg", "category": "overlay", "transparent": true },
+    { "file": "svg/aurora-ribbons.svg", "category": "overlay", "transparent": true },
+    { "file": "svg/site-silhouette.svg", "category": "overlay", "transparent": true },
+    { "file": "svg/safety-contour.svg", "category": "shape", "transparent": true },
+    { "file": "svg/metric-orbit.svg", "category": "shape", "transparent": true },
+    { "file": "svg/empty-state-team.svg", "category": "illustration", "transparent": true },
+    { "file": "backgrounds/object-residential-3d.webp", "category": "card-background", "transparent": false, "dimensions": "1536x1024", "generated": true, "active": false },
+    { "file": "backgrounds/object-business-3d.webp", "category": "card-background", "transparent": false, "dimensions": "1536x1024", "generated": true, "active": false },
+    { "file": "backgrounds/object-school-3d.webp", "category": "card-background", "transparent": false, "dimensions": "1536x1024", "generated": true, "active": false },
+    { "file": "backgrounds/object-residential-3d-v2.webp", "category": "card-background", "transparent": false, "dimensions": "1536x1024", "generated": true, "active": true },
+    { "file": "backgrounds/object-business-3d-v2.webp", "category": "card-background", "transparent": false, "dimensions": "1536x1024", "generated": true, "active": true },
+    { "file": "backgrounds/object-school-3d-v2.webp", "category": "card-background", "transparent": false, "dimensions": "1536x1024", "generated": true, "active": true },
+    { "file": "backgrounds/metric-workforce-3d.webp", "category": "metric-background", "transparent": false, "dimensions": "1536x1024", "generated": true },
+    { "file": "backgrounds/metric-active-work-3d.webp", "category": "metric-background", "transparent": false, "dimensions": "1536x1024", "generated": true },
+    { "file": "backgrounds/metric-tasks-3d.webp", "category": "metric-background", "transparent": false, "dimensions": "1536x1024", "generated": true },
+    { "file": "backgrounds/metric-attention-3d.webp", "category": "metric-background", "transparent": false, "dimensions": "1536x1024", "generated": true }
+  ]
+}

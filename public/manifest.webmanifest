@@ -1,0 +1,19 @@
+{
+  "name": "СМЕНА",
+  "short_name": "СМЕНА",
+  "description": "Управление сменами, задачами и строительными командами",
+  "lang": "ru",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f7ff",
+  "theme_color": "#0667f9",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

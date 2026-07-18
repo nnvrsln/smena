@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" fill="none">
+  <defs>
+    <linearGradient id="line" x1="54" y1="89" x2="1135" y2="413" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#27C9EA" stop-opacity=".18"/>
+      <stop offset=".48" stop-color="#0A83FA" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#0758E8" stop-opacity=".14"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="720" y1="50" x2="1110" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8750" stop-opacity=".65"/>
+      <stop offset="1" stop-color="#FF5428" stop-opacity=".16"/>
+    </linearGradient>
+  </defs>
+  <g stroke="url(#line)" stroke-width="2.2" stroke-linejoin="round">
+    <path d="M70 416V255h230v161M92 285h185M92 322h185M92 359h185M135 255v161M190 255v161M245 255v161"/>
+    <path d="M300 416V176h298v240M333 211h231M333 254h231M333 297h231M333 340h231M382 176v240M454 176v240M526 176v240"/>
+    <path d="M598 416V288h174v128M627 323h116M627 359h116M674 288v128M723 288v128"/>
+    <path d="M772 416V236h279v180M808 272h207M808 315h207M808 358h207M859 236v180M925 236v180M990 236v180"/>
+    <path d="M38 416h1102" stroke-width="4"/>
+    <path d="M734 286V84M714 286h40M723 248h22M723 210h22M723 172h22M723 134h22"/>
+  </g>
+  <g stroke="url(#accent)" stroke-width="3.2" stroke-linecap="round">
+    <path d="M734 89h365M734 89 969 46M734 89l218 35M833 89l-39 34M921 89l-39 34M1012 89l-39 34"/>
+    <path d="M1093 89v105M1080 194h26"/>
+  </g>
+  <path d="M442 176 498 122l56 54M875 236l73-70 73 70" stroke="#19A9E8" stroke-opacity=".3" stroke-width="2"/>
+</svg>

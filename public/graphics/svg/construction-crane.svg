@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" fill="none">
+  <defs>
+    <linearGradient id="stroke" x1="62" y1="50" x2="581" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2ED0EE"/>
+      <stop offset=".55" stop-color="#0C83FA"/>
+      <stop offset="1" stop-color="#0758E9"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="183" y1="164" x2="401" y2="323" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8DEAFF" stop-opacity=".32"/>
+      <stop offset="1" stop-color="#0870F2" stop-opacity=".08"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="82" y1="94" x2="498" y2="178" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF9A5C"/>
+      <stop offset="1" stop-color="#FF5428"/>
+    </linearGradient>
+  </defs>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path d="M92 319h471" stroke="#0D4DAD" stroke-opacity=".24" stroke-width="4"/>
+    <path d="M114 316V72M91 316h46M104 282h20M104 239h20M104 196h20M104 153h20M104 110h20" stroke="url(#orange)" stroke-width="7"/>
+    <path d="M114 78h365M114 78 360 36M114 78l225 36M212 78l-36 37M292 78l-36 37M374 78l-36 37M454 78l-36 37" stroke="url(#orange)" stroke-width="6"/>
+    <path d="M475 78v86M461 164h28M475 164v38" stroke="#FF6232" stroke-width="5"/>
+    <path d="M173 319V177h209v142" fill="url(#glass)" stroke="url(#stroke)" stroke-width="5"/>
+    <path d="M173 223h209M173 270h209M224 177v142M277 177v142M330 177v142" stroke="url(#stroke)" stroke-opacity=".72" stroke-width="3"/>
+    <path d="M382 218h91v101h-91M425 218v101M382 268h91" fill="url(#glass)" stroke="url(#stroke)" stroke-width="5"/>
+    <path d="M474 257h69v62h-69M509 257v62" stroke="url(#stroke)" stroke-width="5"/>
+    <path d="M151 319h420" stroke="url(#stroke)" stroke-width="7"/>
+    <path d="M542 319v-78l34 20v58M542 281h34" stroke="#20BDEB" stroke-width="4"/>
+    <circle cx="576" cy="236" r="5" fill="#FF5B2A"/>
+  </g>
+</svg>

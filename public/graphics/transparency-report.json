@@ -1,0 +1,128 @@
+{
+  "pack": "SMENA Construction Graphics",
+  "generatedAt": "2026-07-17T14:01:00.337Z",
+  "rule": "Every exported PNG must contain real transparent pixels and an alpha channel.",
+  "passed": true,
+  "assets": [
+    {
+      "source": "svg/brand-mark.svg",
+      "export": "png/brand-mark.png",
+      "width": 256,
+      "height": 256,
+      "hasAlpha": true,
+      "fullyTransparentPixels": 13861,
+      "fullyTransparentRatio": 0.2115,
+      "translucentPixels": 51086,
+      "translucentRatio": 0.7795,
+      "passed": true
+    },
+    {
+      "source": "svg/tile-module.svg",
+      "export": "png/tile-module.png",
+      "width": 320,
+      "height": 320,
+      "hasAlpha": true,
+      "fullyTransparentPixels": 50593,
+      "fullyTransparentRatio": 0.4941,
+      "translucentPixels": 89119,
+      "translucentRatio": 0.8703,
+      "passed": true
+    },
+    {
+      "source": "svg/worker-hardhat.svg",
+      "export": "png/worker-hardhat.png",
+      "width": 512,
+      "height": 512,
+      "hasAlpha": true,
+      "fullyTransparentPixels": 135210,
+      "fullyTransparentRatio": 0.5158,
+      "translucentPixels": 189860,
+      "translucentRatio": 0.7243,
+      "passed": true
+    },
+    {
+      "source": "svg/construction-crane.svg",
+      "export": "png/construction-crane.png",
+      "width": 1280,
+      "height": 720,
+      "hasAlpha": true,
+      "fullyTransparentPixels": 706646,
+      "fullyTransparentRatio": 0.7668,
+      "translucentPixels": 850763,
+      "translucentRatio": 0.9231,
+      "passed": true
+    },
+    {
+      "source": "svg/blueprint-grid.svg",
+      "export": "png/blueprint-grid.png",
+      "width": 2400,
+      "height": 2400,
+      "hasAlpha": true,
+      "fullyTransparentPixels": 5457889,
+      "fullyTransparentRatio": 0.9476,
+      "translucentPixels": 5760000,
+      "translucentRatio": 1,
+      "passed": true
+    },
+    {
+      "source": "svg/aurora-ribbons.svg",
+      "export": "png/aurora-ribbons.png",
+      "width": 2400,
+      "height": 1000,
+      "hasAlpha": true,
+      "fullyTransparentPixels": 1713076,
+      "fullyTransparentRatio": 0.7138,
+      "translucentPixels": 2400000,
+      "translucentRatio": 1,
+      "passed": true
+    },
+    {
+      "source": "svg/site-silhouette.svg",
+      "export": "png/site-silhouette.png",
+      "width": 2400,
+      "height": 960,
+      "hasAlpha": true,
+      "fullyTransparentPixels": 2188536,
+      "fullyTransparentRatio": 0.9499,
+      "translucentPixels": 2304000,
+      "translucentRatio": 1,
+      "passed": true
+    },
+    {
+      "source": "svg/safety-contour.svg",
+      "export": "png/safety-contour.png",
+      "width": 1600,
+      "height": 480,
+      "hasAlpha": true,
+      "fullyTransparentPixels": 730455,
+      "fullyTransparentRatio": 0.9511,
+      "translucentPixels": 767025,
+      "translucentRatio": 0.9987,
+      "passed": true
+    },
+    {
+      "source": "svg/metric-orbit.svg",
+      "export": "png/metric-orbit.png",
+      "width": 720,
+      "height": 720,
+      "hasAlpha": true,
+      "fullyTransparentPixels": 458123,
+      "fullyTransparentRatio": 0.8837,
+      "translucentPixels": 485055,
+      "translucentRatio": 0.9357,
+      "passed": true
+    },
+    {
+      "source": "svg/empty-state-team.svg",
+      "export": "png/empty-state-team.png",
+      "width": 960,
+      "height": 720,
+      "hasAlpha": true,
+      "fullyTransparentPixels": 358490,
+      "fullyTransparentRatio": 0.5186,
+      "translucentPixels": 589896,
+      "translucentRatio": 0.8534,
+      "passed": true
+    }
+  ]
+}

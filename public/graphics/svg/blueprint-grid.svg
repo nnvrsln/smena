@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" fill="none">
+  <defs>
+    <pattern id="minor" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0v24" stroke="#1779EC" stroke-opacity=".08" stroke-width="1"/>
+    </pattern>
+    <pattern id="major" width="120" height="120" patternUnits="userSpaceOnUse">
+      <rect width="120" height="120" fill="url(#minor)"/>
+      <path d="M120 0H0v120" stroke="#0A65D9" stroke-opacity=".13" stroke-width="1.4"/>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1200" y2="1200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff" stop-opacity=".95"/>
+      <stop offset=".55" stop-color="#fff" stop-opacity=".6"/>
+      <stop offset="1" stop-color="#fff" stop-opacity=".1"/>
+    </linearGradient>
+    <mask id="m"><rect width="1200" height="1200" fill="url(#fade)"/></mask>
+  </defs>
+  <g mask="url(#m)">
+    <rect width="1200" height="1200" fill="url(#major)"/>
+    <path d="M96 172h412M96 162v20M508 162v20M181 156v32M298 156v32M414 156v32" stroke="#0B68E0" stroke-opacity=".22" stroke-width="2"/>
+    <path d="M671 820h374M671 810v20M1045 810v20M764 804v32M858 804v32M951 804v32" stroke="#0B68E0" stroke-opacity=".18" stroke-width="2"/>
+    <circle cx="188" cy="905" r="82" stroke="#17AEEA" stroke-opacity=".16" stroke-width="2"/>
+    <circle cx="188" cy="905" r="60" stroke="#17AEEA" stroke-opacity=".12" stroke-width="2" stroke-dasharray="8 10"/>
+    <path d="m130 963 116-116M130 847l116 116" stroke="#17AEEA" stroke-opacity=".1" stroke-width="2"/>
+  </g>
+</svg>

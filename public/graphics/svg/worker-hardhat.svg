@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="vest" x1="62" y1="145" x2="201" y2="240" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0879FA"/>
+      <stop offset="1" stop-color="#1DC4E9"/>
+    </linearGradient>
+    <linearGradient id="helmet" x1="78" y1="44" x2="178" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF9A5E"/>
+      <stop offset="1" stop-color="#FF5528"/>
+    </linearGradient>
+    <filter id="shadow" x="30" y="26" width="200" height="230" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0A4EB3" flood-opacity=".16"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M55 225c5-44 33-71 73-71s68 27 73 71" fill="url(#vest)"/>
+    <path d="M94 157 128 190l34-33 14 14-22 54H102l-22-54 14-14Z" fill="#fff" fill-opacity=".92"/>
+    <path d="m111 176 17 15 17-15-8 49h-18l-8-49Z" fill="#123066" fill-opacity=".9"/>
+    <path d="M128 159c-29 0-48-23-48-55 0-31 19-54 48-54s48 23 48 54c0 32-19 55-48 55Z" fill="#F3B890"/>
+    <path d="M89 108c4 31 19 48 39 48 24 0 39-20 40-49-11 7-24 10-39 10-16 0-29-3-40-9Z" fill="#D99067" fill-opacity=".28"/>
+    <path d="M76 91c3-32 23-55 52-55s49 23 52 55" fill="url(#helmet)"/>
+    <path d="M68 94c0-8 6-14 14-14h92c8 0 14 6 14 14v7H68v-7Z" fill="#FF6936"/>
+    <path d="M120 41h16v43h-16V41Z" fill="#FFB17D" fill-opacity=".62"/>
+    <path d="M105 124c7 6 15 9 23 9s16-3 23-9" stroke="#8E4B37" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="110" cy="108" r="3.5" fill="#2B3854"/>
+    <circle cx="146" cy="108" r="3.5" fill="#2B3854"/>
+  </g>
+</svg>

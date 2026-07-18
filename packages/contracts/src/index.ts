@@ -1,0 +1,82 @@
+export const roles = ['contractor', 'foreman', 'worker'] as const
+
+export type Role = (typeof roles)[number]
+
+export const permissions = [
+  'organization.read',
+  'organization.manage',
+  'object.read',
+  'object.manage',
+  'member.read',
+  'member.manage',
+  'shift.read.self',
+  'shift.read.team',
+  'shift.read.organization',
+  'shift.manage.self',
+  'task.read.self',
+  'task.read.object',
+  'task.create',
+  'task.manage',
+  'issue.create',
+  'issue.comment',
+  'issue.manage',
+  'report.read',
+] as const
+
+export type Permission = (typeof permissions)[number]
+
+export type NavigationKey =
+  | 'overview'
+  | 'objects'
+  | 'team'
+  | 'tasks'
+  | 'timesheet'
+  | 'reports'
+  | 'today'
+  | 'messages'
+  | 'profile'
+
+export interface NavigationItem {
+  key: NavigationKey
+  label: string
+}
+
+export interface OrganizationSummary {
+  id: string
+  name: string
+}
+
+export interface UserSummary {
+  id: string
+  displayName: string
+  initials: string
+  role: Role
+}
+
+export interface ObjectSummary {
+  id: string
+  name: string
+  code: string
+  presentWorkers: number
+  plannedWorkers: number
+  dayProgress: number
+  issueCount: number
+}
+
+export interface MeContextResponse {
+  user: UserSummary
+  organization: OrganizationSummary
+  objects: ObjectSummary[]
+  permissions: Permission[]
+  navigation: NavigationItem[]
+  environment: 'development' | 'production'
+}
+
+export interface ApiError {
+  code: string
+  message: string
+}
+
+export function isRole(value: string | undefined): value is Role {
+  return roles.includes(value as Role)
+}
