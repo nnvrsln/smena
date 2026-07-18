@@ -8,6 +8,7 @@ interface IdentityRow {
   display_name: string
   organization_id: string
   organization_name: string
+  role: Role
 }
 
 interface ObjectRow {
@@ -48,7 +49,8 @@ export class PostgresAccessRepository implements AccessRepository, OnModuleDestr
          u.id::text as user_id,
          u.display_name,
          o.id::text as organization_id,
-         o.name as organization_name
+         o.name as organization_name,
+         m.role
        from memberships m
        join users u on u.id = m.user_id and u.status = 'active'
        join organizations o on o.id = m.organization_id and o.status = 'active'
@@ -58,11 +60,33 @@ export class PostgresAccessRepository implements AccessRepository, OnModuleDestr
       [role],
     )
 
-    const row = identityResult.rows[0]
+    return this.identityFromRow(identityResult.rows[0])
+  }
+
+  async findIdentityByUserId(userId: string): Promise<IdentityRecord | null> {
+    const identityResult = await this.pool.query<IdentityRow>(
+      `select
+         u.id::text as user_id,
+         u.display_name,
+         o.id::text as organization_id,
+         o.name as organization_name,
+         m.role
+       from memberships m
+       join users u on u.id = m.user_id and u.status = 'active'
+       join organizations o on o.id = m.organization_id and o.status = 'active'
+       where u.id = $1 and m.status = 'active'
+       order by m.created_at, m.id
+       limit 1`,
+      [userId],
+    )
+    return this.identityFromRow(identityResult.rows[0])
+  }
+
+  private async identityFromRow(row: IdentityRow | undefined): Promise<IdentityRecord | null> {
     if (!row) return null
 
     let objectIds: string[] | 'all' = 'all'
-    if (role !== 'contractor') {
+    if (row.role !== 'contractor') {
       const scopeResult = await this.pool.query<{ object_id: string }>(
         `select om.object_id::text as object_id
          from object_memberships om
@@ -84,7 +108,7 @@ export class PostgresAccessRepository implements AccessRepository, OnModuleDestr
         id: row.user_id,
         displayName: row.display_name,
         initials: initialsFor(row.display_name),
-        role,
+        role: row.role,
       },
       organization: { id: row.organization_id, name: row.organization_name },
       objectIds,

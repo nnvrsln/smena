@@ -72,6 +72,15 @@ export interface MeContextResponse {
   environment: 'development' | 'production'
 }
 
+export interface LoginRequest {
+  phone: string
+  password: string
+}
+
+export interface LoginResponse {
+  context: MeContextResponse
+}
+
 export interface ApiError {
   code: string
   message: string

@@ -1,7 +1,7 @@
 import type { MeContextResponse, NavigationKey } from '@smena/contracts'
 import {
   AlertTriangle, BarChart3, Bell, Building2, CheckCircle2, ClipboardList,
-  Clock3, FileText, HardHat, Home, MessageCircle, Plus, Settings, Users,
+  Clock3, FileText, HardHat, Home, LogOut, MessageCircle, Plus, Settings, Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Brand } from './Brand'
@@ -13,13 +13,21 @@ const navigationIcons: Record<NavigationKey, LucideIcon> = {
 
 const roleLabels = { contractor: 'Подрядчик', foreman: 'Бригадир', worker: 'Рабочий' } as const
 
-export function RoleWorkspace({ context }: { context: MeContextResponse }) {
-  if (context.user.role === 'contractor') return <ContractorWorkspace context={context} />
-  if (context.user.role === 'foreman') return <MobileWorkspace context={context} kind="foreman" />
-  return <MobileWorkspace context={context} kind="worker" />
+export function RoleWorkspace({ context, onLogout }: { context: MeContextResponse; onLogout: () => void }) {
+  if (context.user.role === 'contractor') return <ContractorSessionWorkspace context={context} onLogout={onLogout} />
+  if (context.user.role === 'foreman') return <MobileSessionWorkspace context={context} kind="foreman" onLogout={onLogout} />
+  return <MobileSessionWorkspace context={context} kind="worker" onLogout={onLogout} />
 }
 
-function ContractorWorkspace({ context }: { context: MeContextResponse }) {
+function ContractorSessionWorkspace({ context, onLogout }: { context: MeContextResponse; onLogout: () => void }) {
+  return <div className="contractor-session-frame"><button className="contractor-mobile-exit" type="button" onClick={onLogout} aria-label="Выйти"><LogOut size={17} /></button><ContractorWorkspace context={context} onLogout={onLogout} /></div>
+}
+
+function MobileSessionWorkspace({ context, kind, onLogout }: { context: MeContextResponse; kind: 'foreman' | 'worker'; onLogout: () => void }) {
+  return <div className="mobile-session-frame"><button className="mobile-session-exit" type="button" onClick={onLogout} aria-label="Выйти"><LogOut size={17} /></button><MobileWorkspace context={context} kind={kind} /></div>
+}
+
+function ContractorWorkspace({ context, onLogout }: { context: MeContextResponse; onLogout: () => void }) {
   const peoplePresent = context.objects.reduce((sum, object) => sum + object.presentWorkers, 0)
   const peoplePlanned = context.objects.reduce((sum, object) => sum + object.plannedWorkers, 0)
   const issueCount = context.objects.reduce((sum, object) => sum + object.issueCount, 0)
@@ -31,7 +39,7 @@ function ContractorWorkspace({ context }: { context: MeContextResponse }) {
         <Brand />
         <div className="organization-card"><span>{context.organization.name.slice(0, 2).toUpperCase()}</span><div><b>{context.organization.name}</b><small>{context.objects.length} активных объекта</small></div></div>
         <nav>{context.navigation.map((item, index) => { const Icon = navigationIcons[item.key]; return <button className={index === 0 ? 'is-active' : ''} type="button" key={item.key}><Icon size={18} /><span>{item.label}</span></button> })}</nav>
-        <div className="sidebar-user"><span>{context.user.initials}</span><div><b>{context.user.displayName}</b><small>{roleLabels[context.user.role]}</small></div></div>
+        <div className="sidebar-user"><span>{context.user.initials}</span><div><b>{context.user.displayName}</b><small>{roleLabels[context.user.role]}</small></div><button type="button" onClick={onLogout} aria-label="Выйти"><LogOut size={16} /></button></div>
       </aside>
       <main className="contractor-main">
         <header className="contractor-topbar"><label><span className="sr-only">Поиск</span><input placeholder="Найти сотрудника, задачу или объект" /></label><button className="icon-action" type="button" aria-label="Уведомления"><Bell size={19} /><i>{issueCount}</i></button><button className="primary-action" type="button"><Plus size={17} />Новая задача</button></header>

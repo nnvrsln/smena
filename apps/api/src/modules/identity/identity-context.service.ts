@@ -1,7 +1,7 @@
 import type { MeContextResponse, Role } from '@smena/contracts'
 import { Inject, Injectable } from '@nestjs/common'
 import { navigationFor, permissionsFor } from '../access/policy.js'
-import type { AccessRepository } from './access-repository.js'
+import type { AccessRepository, IdentityRecord } from './access-repository.js'
 
 export const ACCESS_REPOSITORY = Symbol('ACCESS_REPOSITORY')
 
@@ -11,14 +11,21 @@ export class IdentityContextService {
 
   async getContext(role: Role, environment: 'development' | 'production'): Promise<MeContextResponse | null> {
     const identity = await this.repository.findIdentityByRole(role)
-    if (!identity) return null
+    return identity ? this.buildContext(identity, environment) : null
+  }
 
+  async getContextForUser(userId: string, environment: 'development' | 'production'): Promise<MeContextResponse | null> {
+    const identity = await this.repository.findIdentityByUserId(userId)
+    return identity ? this.buildContext(identity, environment) : null
+  }
+
+  private async buildContext(identity: IdentityRecord, environment: 'development' | 'production'): Promise<MeContextResponse> {
     return {
       user: identity.user,
       organization: identity.organization,
       objects: await this.repository.listObjectsForIdentity(identity),
-      permissions: permissionsFor(role),
-      navigation: navigationFor(role),
+      permissions: permissionsFor(identity.user.role),
+      navigation: navigationFor(identity.user.role),
       environment,
     }
   }

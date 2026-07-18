@@ -8,5 +8,6 @@ export interface IdentityRecord {
 
 export interface AccessRepository {
   findIdentityByRole(role: Role): Promise<IdentityRecord | null>
+  findIdentityByUserId(userId: string): Promise<IdentityRecord | null>
   listObjectsForIdentity(identity: IdentityRecord): Promise<ObjectSummary[]>
 }

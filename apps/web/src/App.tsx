@@ -1,15 +1,23 @@
 import { AlertTriangle, LoaderCircle } from 'lucide-react'
-import type { ReactNode } from 'react'
-import { requestedDevelopmentRole } from './api/context'
-import { RoleDevBar } from './components/RoleDevBar'
+import { ReactNode, useState } from 'react'
+import { logout } from './api/context'
+import { LoginScreen } from './components/LoginScreen'
 import { RoleWorkspace } from './components/RoleWorkspace'
 import { useMeContext } from './hooks/useMeContext'
 
 export default function App() {
-  const role = requestedDevelopmentRole()
-  const context = useMeContext(role)
+  const [reloadKey, setReloadKey] = useState(0)
+  const context = useMeContext(reloadKey)
 
-  return <div className="production-stage"><RoleDevBar activeRole={role} />{context.status === 'loading' ? <StateCard icon={<LoaderCircle className="spin" />} title="Загружаем контекст доступа" body="Web-клиент ждёт подтверждённые данные от API." /> : context.status === 'error' ? <StateCard icon={<AlertTriangle />} title="API недоступен" body={context.error} /> : <RoleWorkspace context={context.data} />}</div>
+  async function signOut() {
+    await logout().catch(() => undefined)
+    setReloadKey((value) => value + 1)
+  }
+
+  if (context.status === 'unauthenticated') return <LoginScreen onSuccess={() => setReloadKey((value) => value + 1)} />
+  if (context.status === 'loading') return <div className="production-stage"><StateCard icon={<LoaderCircle className="spin" />} title="Проверяем сессию" body="Смена восстанавливает защищённый доступ к рабочему кабинету." /></div>
+  if (context.status === 'error') return <div className="production-stage"><StateCard icon={<AlertTriangle />} title="API недоступен" body={context.error} /></div>
+  return <div className="production-stage production-stage--workspace"><RoleWorkspace context={context.data} onLogout={signOut} /></div>
 }
 
 function StateCard({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {

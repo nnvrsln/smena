@@ -32,6 +32,10 @@ export class DevelopmentAccessRepository implements AccessRepository {
     return identities[role]
   }
 
+  async findIdentityByUserId(userId: string): Promise<IdentityRecord | null> {
+    return Object.values(identities).find((identity) => identity.user.id === userId) ?? null
+  }
+
   async listObjectsForIdentity(identity: IdentityRecord): Promise<ObjectSummary[]> {
     if (identity.objectIds === 'all') return objects.map((object) => ({ ...object }))
     return objects.filter((object) => identity.objectIds.includes(object.id)).map((object) => ({ ...object }))
