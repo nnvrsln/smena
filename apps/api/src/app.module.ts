@@ -4,6 +4,7 @@ import { AuthService } from './modules/auth/auth.service.js'
 import { ACCESS_REPOSITORY, IdentityContextService } from './modules/identity/identity-context.service.js'
 import { PostgresAccessRepository } from './modules/identity/postgres-access.repository.js'
 import { MembersService } from './modules/members/members.service.js'
+import { ShiftsService } from './modules/shifts/shifts.service.js'
 
 @Module({
   controllers: [AppController],
@@ -11,6 +12,7 @@ import { MembersService } from './modules/members/members.service.js'
     IdentityContextService,
     AuthService,
     MembersService,
+    ShiftsService,
     { provide: ACCESS_REPOSITORY, useClass: PostgresAccessRepository },
   ],
 })

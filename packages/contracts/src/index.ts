@@ -103,6 +103,20 @@ export interface UpdateMemberObjectsResponse {
   member: MemberSummary
 }
 
+export interface ShiftSummary {
+  id: string
+  objectId: string
+  objectName: string
+  objectCode: string
+  status: 'open' | 'closed'
+  startedAtServer: string
+  startMethod: 'qr_scan' | 'manual'
+}
+
+export interface CurrentShiftResponse { shift: ShiftSummary | null }
+export interface StartShiftRequest { objectId: string; qrToken: string; occurredAtDevice: string }
+export interface StartShiftResponse { shift: ShiftSummary }
+
 export interface ApiError {
   code: string
   message: string

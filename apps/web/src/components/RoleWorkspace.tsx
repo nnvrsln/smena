@@ -2,11 +2,11 @@ import type { MeContextResponse, MemberSummary, NavigationKey, ObjectSummary, Ro
 import {
   AlertTriangle, ArrowUpRight, BarChart3, Bell, Building2, CalendarDays, CheckCircle2,
   ChevronDown, ChevronRight, ClipboardList, Clock3, Download, FileText, HardHat, Home,
-  LoaderCircle, LogOut, Menu, MessageCircle, MoreHorizontal, Phone, Plus, Search, Settings, SlidersHorizontal, Users,
+  LoaderCircle, LogOut, Menu, MessageCircle, MoreHorizontal, Phone, Plus, Search, Settings, SlidersHorizontal, Users, ArrowRight,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { loadMembers, updateMemberObjects } from '../api/context'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { loadCurrentShift, loadMembers, startShift, updateMemberObjects } from '../api/context'
 import { Brand } from './Brand'
 
 const navigationIcons: Record<NavigationKey, LucideIcon> = {
@@ -187,7 +187,33 @@ function ContractorObjectCard({ object, index, onOpen }: { object: ObjectSummary
 }
 
 function MobileSessionWorkspace({ context, kind, onLogout }: { context: MeContextResponse; kind: 'foreman' | 'worker'; onLogout: () => void }) {
-  return <div className="mobile-session-frame"><button className="mobile-session-exit" type="button" onClick={onLogout} aria-label="Выйти"><LogOut size={17} /></button><MobileWorkspace context={context} kind={kind} /></div>
+  return <div className="mobile-session-frame"><button className="mobile-session-exit" type="button" onClick={onLogout} aria-label="Выйти"><LogOut size={17} /></button>{kind === 'worker' ? <WorkerHomeWorkspace context={context} /> : <MobileWorkspace context={context} kind={kind} />}</div>
+}
+
+function SwipeAction({ label, onComplete }: { label: string; onComplete: () => void }) {
+  const [offset, setOffset] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const startX = useMemo(() => ({ value: 0 }), [])
+  return <div className={`swipe-action ${dragging ? 'is-dragging' : ''}`} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); startX.value = event.clientX - offset; setDragging(true) }} onPointerMove={(event) => { if (!dragging) return; setOffset(Math.max(0, Math.min(event.currentTarget.clientWidth - 54, event.clientX - startX.value))) }} onPointerUp={(event) => { setDragging(false); const limit = event.currentTarget.clientWidth - 54; if (offset >= limit * .72) { setOffset(limit); window.setTimeout(() => { setOffset(0); onComplete() }, 160) } else setOffset(0) }}><span className="swipe-action__label">{label}</span><span className="swipe-action__thumb" style={{ transform: `translateX(${offset}px)` }}><ArrowRight size={18} /></span></div>
+}
+
+function WorkerHomeWorkspace({ context }: { context: MeContextResponse }) {
+  const object = context.objects[0]
+  const [shift, setShift] = useState<Awaited<ReturnType<typeof loadCurrentShift>>['shift']>(null)
+  const [showQr, setShowQr] = useState(false)
+  const [qrToken, setQrToken] = useState('')
+  const [notice, setNotice] = useState<string | null>(null)
+  useEffect(() => { void loadCurrentShift().then((result) => setShift(result.shift)).catch(() => undefined) }, [])
+  const now = new Date()
+  const dateLabel = now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })
+  const start = async (token: string) => { if (!object) return; try { const result = await startShift({ objectId: object.id, qrToken: token, occurredAtDevice: new Date().toISOString() }); setShift(result.shift); setShowQr(false); setQrToken(''); setNotice('Смена начата — QR-код подтверждён') } catch (error) { setNotice(error instanceof Error ? error.message : 'Не удалось начать смену') } }
+  return <main className="mobile-shell"><section className="phone-app worker-home"><header className="mobile-header"><Brand compact /><div><button type="button" aria-label="Уведомления"><Bell size={20} /></button><span>{context.user.initials}</span></div></header><div className="mobile-content worker-home__content"><section className="worker-welcome"><div><span>{dateLabel}</span><h1>Доброе утро, {context.user.displayName.split(' ').at(-1)}</h1></div></section><section className="worker-day-hero"><header className="worker-day-hero__summary"><div className="worker-day-hero__time"><time>{now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</time><span>{dateLabel}</span></div><div className="worker-day-hero__weather"><img src="/graphics/weather/weather-sunny-3d.png" alt="" /><span><strong>+18°</strong><small>Ясно</small></span></div></header><div className={`worker-day-hero__shift worker-day-hero__shift--${shift ? 'active' : 'idle'}`}><div className="worker-day-hero__shift-copy"><img src={`/graphics/shift/shift-${shift ? 'active' : 'idle'}-apple.png`} alt="" /><span><small>{object?.name ?? 'Объект не назначен'} · {object?.code ?? ''}</small><b>{shift ? 'Смена идёт' : 'Смена не начата'}</b><em>{shift ? `Начата в ${new Date(shift.startedAtServer).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · отправлено` : 'Готово к началу рабочего дня'}</em></span></div>{shift ? <div className="worker-shift-started">Смена подтверждена</div> : <SwipeAction label="Свайп, чтобы начать смену" onComplete={() => setShowQr(true)} />}</div></section><section className="content-section worker-today"><div className="section-title-row worker-today__title"><div><span>План работ</span><h2>Задачи на сегодня</h2></div><span className="worker-today__count">4 задачи</span></div><div className="worker-task-group worker-task-group--primary"><div><b>Укладка плитки</b><span>ЖК «Северный» · Корпус 4</span></div><strong>64%</strong><i><em style={{ width: '64%' }} /></i></div><div className="worker-task-group worker-task-group--secondary"><div className="worker-task-row"><span>Подготовка основания</span><b>Готово</b></div><div className="worker-task-row"><span>Проверка уровня</span><b>До 14:00</b></div><div className="worker-task-row"><span>Уборка зоны</span><b>До 17:30</b></div></div></section><section className="content-section worker-quick"><div className="section-title-row"><h2>Быстрые действия</h2></div><div className="quick-grid"><button type="button"><ClipboardList size={20} /><span>Мои задачи</span></button><button type="button"><AlertTriangle size={20} /><span>Сообщить о проблеме</span></button><button type="button"><Clock3 size={20} /><span>Мой день</span></button></div></section></div><nav className="mobile-nav">{context.navigation.slice(0, 4).map((item, index) => { const Icon = navigationIcons[item.key]; return <button className={index === 0 ? 'is-active' : ''} type="button" key={item.key}><Icon size={19} /><span>{item.label}</span></button> })}</nav>{showQr ? <QrModal objectName={object?.name} onClose={() => setShowQr(false)} qrToken={qrToken} onToken={setQrToken} onSubmit={() => void start(qrToken)} /> : null}{notice ? <button className="worker-toast" type="button" onClick={() => setNotice(null)}>{notice}</button> : null}</section></main>
+}
+
+function QrModal({ objectName, onClose, qrToken, onToken, onSubmit }: { objectName?: string; onClose: () => void; qrToken: string; onToken: (value: string) => void; onSubmit: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  useEffect(() => { let stream: MediaStream | undefined; let timer: number | undefined; const run = async () => { try { stream = await navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'environment' } }); if (videoRef.current && stream) { videoRef.current.srcObject = stream; await videoRef.current.play(); } const Detector = (window as Window & { BarcodeDetector?: new () => { detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue: string }>> } }).BarcodeDetector; if (Detector && videoRef.current) { const detector = new Detector(); const scan = async () => { if (videoRef.current?.readyState === 4) { const codes = await detector.detect(videoRef.current); if (codes[0]?.rawValue) onToken(codes[0].rawValue) } timer = window.setTimeout(() => void scan(), 500) }; void scan() } } catch { /* manual fallback remains available */ } }; void run(); return () => { if (timer) window.clearTimeout(timer); stream?.getTracks().forEach((track) => track.stop()) } }, [onToken])
+  return <div className="qr-modal-backdrop"><section className="qr-modal" role="dialog" aria-modal="true"><button className="qr-modal__close" type="button" onClick={onClose}>×</button><span className="qr-modal__icon">▦</span><h2>Отсканируйте QR-код</h2><p>Наведите камеру на QR-код объекта «{objectName ?? '—'}».</p><div className="qr-camera-placeholder"><video ref={videoRef} muted playsInline />Камера готова к сканированию</div><label>Если камера недоступна, введите код<input value={qrToken} onChange={(event) => onToken(event.target.value)} placeholder="SMENA-QR-…" /></label><button className="qr-modal__submit" type="button" disabled={!qrToken.trim()} onClick={onSubmit}>Подтвердить QR</button></section></div>
 }
 
 function MobileWorkspace({ context, kind }: { context: MeContextResponse; kind: 'foreman' | 'worker' }) {

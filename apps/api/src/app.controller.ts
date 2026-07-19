@@ -1,10 +1,11 @@
 import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Post, Put, Query, Req, Res } from '@nestjs/common'
-import type { ApiError, LoginRequest, LoginResponse, MemberListResponse, Permission, UpdateMemberObjectsRequest, UpdateMemberObjectsResponse } from '@smena/contracts'
+import type { ApiError, LoginRequest, LoginResponse, MemberListResponse, Permission, StartShiftRequest, UpdateMemberObjectsRequest, UpdateMemberObjectsResponse } from '@smena/contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { can } from './modules/access/policy.js'
 import { AuthService } from './modules/auth/auth.service.js'
 import { IdentityContextService } from './modules/identity/identity-context.service.js'
 import { MembersService } from './modules/members/members.service.js'
+import { ShiftsService } from './modules/shifts/shifts.service.js'
 
 const sessionCookieName = 'smena_session'
 
@@ -34,6 +35,7 @@ export class AppController {
     @Inject(IdentityContextService) private readonly identityService: IdentityContextService,
     @Inject(AuthService) private readonly authService: AuthService,
     @Inject(MembersService) private readonly membersService: MembersService,
+    @Inject(ShiftsService) private readonly shiftsService: ShiftsService,
   ) {}
 
   @Get('/health')
@@ -94,6 +96,20 @@ export class AppController {
   async members(@Req() request: FastifyRequest): Promise<MemberListResponse> {
     const context = await this.authorizedContext(request, 'member.manage')
     return { members: await this.membersService.list(context.organization.id) }
+  }
+
+  @Get('/api/v1/shifts/current')
+  async currentShift(@Req() request: FastifyRequest) {
+    const userId = await this.authService.authenticate(sessionToken(request))
+    if (!userId) throw new HttpException({ code: 'SESSION_REQUIRED', message: 'Войдите, чтобы продолжить.' }, HttpStatus.UNAUTHORIZED)
+    return this.shiftsService.current(userId)
+  }
+
+  @Post('/api/v1/shifts/start')
+  async startShift(@Req() request: FastifyRequest, @Body() body: Partial<StartShiftRequest>) {
+    const context = await this.authorizedContext(request, 'shift.manage.self')
+    const userId = context.user.id
+    return this.shiftsService.start(userId, context.organization.id, body)
   }
 
   @Put('/api/v1/members/:memberId/objects')

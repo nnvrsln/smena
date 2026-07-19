@@ -1,4 +1,4 @@
-import type { ApiError, LoginRequest, LoginResponse, MeContextResponse, MemberListResponse, UpdateMemberObjectsResponse } from '@smena/contracts'
+import type { ApiError, CurrentShiftResponse, LoginRequest, LoginResponse, MeContextResponse, MemberListResponse, StartShiftRequest, StartShiftResponse, UpdateMemberObjectsResponse } from '@smena/contracts'
 
 export class ApiRequestError extends Error {
   constructor(public readonly status: number, public readonly code: string, message: string) {
@@ -49,4 +49,16 @@ export async function updateMemberObjects(memberId: string, objectIds: string[])
   })
   if (!response.ok) throw await responseError(response)
   return response.json() as Promise<UpdateMemberObjectsResponse>
+}
+
+export async function loadCurrentShift(signal?: AbortSignal): Promise<CurrentShiftResponse> {
+  const response = await fetch('/api/v1/shifts/current', { credentials: 'include', signal })
+  if (!response.ok) throw await responseError(response)
+  return response.json() as Promise<CurrentShiftResponse>
+}
+
+export async function startShift(body: StartShiftRequest): Promise<StartShiftResponse> {
+  const response = await fetch('/api/v1/shifts/start', { method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) })
+  if (!response.ok) throw await responseError(response)
+  return response.json() as Promise<StartShiftResponse>
 }
