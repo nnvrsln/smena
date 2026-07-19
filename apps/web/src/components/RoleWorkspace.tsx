@@ -206,14 +206,59 @@ function WorkerHomeWorkspace({ context }: { context: MeContextResponse }) {
   useEffect(() => { void loadCurrentShift().then((result) => setShift(result.shift)).catch(() => undefined) }, [])
   const now = new Date()
   const dateLabel = now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })
-  const start = async (token: string) => { if (!object) return; try { const result = await startShift({ objectId: object.id, qrToken: token, occurredAtDevice: new Date().toISOString() }); setShift(result.shift); setShowQr(false); setQrToken(''); setNotice('Смена начата — QR-код подтверждён') } catch (error) { setNotice(error instanceof Error ? error.message : 'Не удалось начать смену') } }
-  return <main className="mobile-shell"><section className="phone-app worker-home"><header className="mobile-header"><Brand compact /><div><button type="button" aria-label="Уведомления"><Bell size={20} /></button><span>{context.user.initials}</span></div></header><div className="mobile-content worker-home__content"><section className="worker-welcome"><span>{dateLabel}</span><h1>Доброе утро, {context.user.displayName.split(' ').at(-1)}</h1></section><section className="worker-day-hero"><header className="worker-day-hero__summary"><div className="worker-day-hero__time"><time>{now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</time></div><div className="worker-day-hero__weather"><img src="/graphics/weather/weather-sunny-3d.png" alt="Погода: ясно" /><span><strong>+18°</strong><small>Ясно</small></span></div></header><div className={`worker-day-hero__shift worker-day-hero__shift--${shift ? 'active' : 'idle'}`}><div className="worker-day-hero__shift-copy"><img src={`/graphics/shift/shift-${shift ? 'active' : 'idle'}-apple.png`} alt="" /><span><small>{object?.name ?? 'Объект не назначен'} · {object?.code ?? ''}</small><b>{shift ? 'Смена идёт' : 'Смена не начата'}</b><em>{shift ? `Начата в ${new Date(shift.startedAtServer).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · отправлено` : 'Готово к началу рабочего дня'}</em></span></div>{shift ? <div className="worker-shift-started">Смена подтверждена</div> : <SwipeAction label="Свайп, чтобы начать смену" onComplete={() => setShowQr(true)} />}</div></section></div><nav className="mobile-nav">{context.navigation.slice(0, 4).map((item, index) => { const Icon = navigationIcons[item.key]; return <button className={index === 0 ? 'is-active' : ''} type="button" key={item.key}><Icon size={19} /><span>{item.label}</span></button> })}</nav>{showQr ? <QrModal objectName={object?.name} onClose={() => setShowQr(false)} qrToken={qrToken} onToken={setQrToken} onSubmit={() => void start(qrToken)} /> : null}{notice ? <button className="worker-toast" type="button" onClick={() => setNotice(null)}>{notice}</button> : null}</section></main>
+  const start = async (token: string) => { if (!object) return false; try { const result = await startShift({ objectId: object.id, qrToken: token, occurredAtDevice: new Date().toISOString() }); setShift(result.shift); setShowQr(false); setQrToken(''); setNotice('Смена начата — QR-код подтверждён'); return true } catch (error) { setNotice(error instanceof Error ? error.message : 'Не удалось начать смену'); return false } }
+  return <main className="mobile-shell"><section className="phone-app worker-home"><header className="mobile-header"><Brand compact /><div><button type="button" aria-label="Уведомления"><Bell size={20} /></button><span>{context.user.initials}</span></div></header><div className="mobile-content worker-home__content"><section className="worker-welcome"><span>{dateLabel}</span><h1>Доброе утро, {context.user.displayName.split(' ').at(-1)}</h1></section><section className="worker-day-hero"><header className="worker-day-hero__summary"><div className="worker-day-hero__time"><time>{now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</time></div><div className="worker-day-hero__weather"><img src="/graphics/weather/weather-sunny-3d.png" alt="Погода: ясно" /><span><strong>+18°</strong><small>Ясно</small></span></div></header><div className={`worker-day-hero__shift worker-day-hero__shift--${shift ? 'active' : 'idle'}`}><div className="worker-day-hero__shift-copy"><img src={`/graphics/shift/shift-${shift ? 'active' : 'idle'}-apple.png`} alt="" /><span><small>{object?.name ?? 'Объект не назначен'} · {object?.code ?? ''}</small><b>{shift ? 'Смена идёт' : 'Смена не начата'}</b><em>{shift ? `Начата в ${new Date(shift.startedAtServer).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · отправлено` : 'Готово к началу рабочего дня'}</em></span></div>{shift ? <div className="worker-shift-started">Смена подтверждена</div> : <SwipeAction label="Свайп, чтобы начать смену" onComplete={() => setShowQr(true)} />}</div></section></div><nav className="mobile-nav">{context.navigation.slice(0, 4).map((item, index) => { const Icon = navigationIcons[item.key]; return <button className={index === 0 ? 'is-active' : ''} type="button" key={item.key}><Icon size={19} /><span>{item.label}</span></button> })}</nav>{showQr ? <QrModal objectName={object?.name} onClose={() => setShowQr(false)} qrToken={qrToken} onToken={setQrToken} onSubmit={start} /> : null}{notice ? <button className="worker-toast" type="button" onClick={() => setNotice(null)}>{notice}</button> : null}</section></main>
 }
 
-function QrModal({ objectName, onClose, qrToken, onToken, onSubmit }: { objectName?: string; onClose: () => void; qrToken: string; onToken: (value: string) => void; onSubmit: () => void }) {
+type QrCameraState = 'requesting' | 'scanning' | 'unsupported' | 'denied' | 'detected'
+
+function QrModal({ objectName, onClose, qrToken, onToken, onSubmit }: { objectName?: string; onClose: () => void; qrToken: string; onToken: (value: string) => void; onSubmit: (token: string) => Promise<boolean> }) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  useEffect(() => { let stream: MediaStream | undefined; let timer: number | undefined; const run = async () => { try { stream = await navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'environment' } }); if (videoRef.current && stream) { videoRef.current.srcObject = stream; await videoRef.current.play(); } const Detector = (window as Window & { BarcodeDetector?: new () => { detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue: string }>> } }).BarcodeDetector; if (Detector && videoRef.current) { const detector = new Detector(); const scan = async () => { if (videoRef.current?.readyState === 4) { const codes = await detector.detect(videoRef.current); if (codes[0]?.rawValue) onToken(codes[0].rawValue) } timer = window.setTimeout(() => void scan(), 500) }; void scan() } } catch { /* manual fallback remains available */ } }; void run(); return () => { if (timer) window.clearTimeout(timer); stream?.getTracks().forEach((track) => track.stop()) } }, [onToken])
-  return <div className="qr-modal-backdrop"><section className="qr-modal" role="dialog" aria-modal="true"><button className="qr-modal__close" type="button" onClick={onClose}>×</button><span className="qr-modal__icon">▦</span><h2>Отсканируйте QR-код</h2><p>Наведите камеру на QR-код объекта «{objectName ?? '—'}».</p><div className="qr-camera-placeholder"><video ref={videoRef} muted playsInline />Камера готова к сканированию</div><label>Если камера недоступна, введите код<input value={qrToken} onChange={(event) => onToken(event.target.value)} placeholder="SMENA-QR-…" /></label><button className="qr-modal__submit" type="button" disabled={!qrToken.trim()} onClick={onSubmit}>Подтвердить QR</button></section></div>
+  const submitRef = useRef(onSubmit)
+  const busyRef = useRef(false)
+  const [cameraState, setCameraState] = useState<QrCameraState>('requesting')
+  submitRef.current = onSubmit
+  useEffect(() => {
+    let active = true
+    let stream: MediaStream | undefined
+    let timer: number | undefined
+    const run = async () => {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) { setCameraState('unsupported'); return }
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+        if (!active || !videoRef.current) return
+        videoRef.current.srcObject = stream
+        await videoRef.current.play()
+        const Detector = (window as Window & { BarcodeDetector?: new (options?: { formats?: string[] }) => { detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue: string }>> } }).BarcodeDetector
+        if (!Detector) { setCameraState('unsupported'); return }
+        const detector = new Detector({ formats: ['qr_code'] })
+        setCameraState('scanning')
+        const scan = async () => {
+          if (!active) return
+          try {
+            if (!busyRef.current && videoRef.current?.readyState === HTMLMediaElement.HAVE_ENOUGH_DATA) {
+              const code = (await detector.detect(videoRef.current))[0]?.rawValue?.trim()
+              if (code) {
+                busyRef.current = true
+                setCameraState('detected')
+                onToken(code)
+                const accepted = await submitRef.current(code)
+                if (!accepted && active) { busyRef.current = false; setCameraState('scanning') }
+              }
+            }
+          } catch { /* continue scanning transient unreadable frames */ }
+          timer = window.setTimeout(() => void scan(), 350)
+        }
+        void scan()
+      } catch (error) {
+        setCameraState(error instanceof DOMException && (error.name === 'NotAllowedError' || error.name === 'SecurityError') ? 'denied' : 'unsupported')
+      }
+    }
+    void run()
+    return () => { active = false; if (timer) window.clearTimeout(timer); stream?.getTracks().forEach((track) => track.stop()) }
+  }, [onToken])
+  const cameraCopy = cameraState === 'requesting' ? 'Запрашиваем доступ к камере…' : cameraState === 'scanning' ? 'Наведите камеру на QR-код' : cameraState === 'detected' ? 'QR-код найден. Проверяем…' : cameraState === 'denied' ? 'Доступ к камере запрещён' : 'Автосканирование недоступно в этом браузере'
+  return <div className="qr-modal-backdrop"><section className="qr-modal" role="dialog" aria-modal="true"><button className="qr-modal__close" type="button" onClick={onClose} aria-label="Закрыть">×</button><span className="qr-modal__icon">▦</span><h2>Отсканируйте QR-код</h2><p>Наведите камеру на QR-код объекта «{objectName ?? '—'}».</p><div className={`qr-camera-placeholder qr-camera-placeholder--${cameraState}`}><video ref={videoRef} muted playsInline /><span className="qr-camera-frame" aria-hidden="true" /><strong>{cameraCopy}</strong></div><label>Если камера недоступна, введите код<input value={qrToken} onChange={(event) => onToken(event.target.value)} placeholder="SMENA-QR-…" /></label><button className="qr-modal__submit" type="button" disabled={!qrToken.trim() || busyRef.current} onClick={() => { busyRef.current = true; setCameraState('detected'); void submitRef.current(qrToken.trim()).then((accepted) => { if (!accepted) { busyRef.current = false; setCameraState('scanning') } }) }}>{cameraState === 'detected' ? 'Проверяем…' : 'Подтвердить QR'}</button></section></div>
 }
 
 function MobileWorkspace({ context, kind }: { context: MeContextResponse; kind: 'foreman' | 'worker' }) {
