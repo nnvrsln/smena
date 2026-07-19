@@ -5,6 +5,7 @@ import '@fontsource/onest/500.css'
 import '@fontsource/onest/600.css'
 import '@fontsource/onest/700.css'
 import App from './App'
+import './design-tokens.css'
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

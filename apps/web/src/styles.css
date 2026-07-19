@@ -355,3 +355,27 @@ button { cursor: pointer; }
   .contractor-mobile-nav { position:absolute;z-index:8;right:0;bottom:0;left:0;display:grid;grid-template-columns:repeat(4,1fr);min-height:65px;padding:7px 7px 9px;border-top:1px solid #dfe6ef;background:rgba(255,255,255,.94);box-shadow:0 -12px 28px rgba(23,55,102,.08);backdrop-filter:blur(18px) }
   .contractor-mobile-nav button { position:relative;display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;border-radius:12px;color:#8490a4;background:transparent }.contractor-mobile-nav button.is-active{color:#0968f4;background:#eff6ff}.contractor-mobile-nav span{font-size:9px;font-weight:650}.contractor-mobile-nav i{position:absolute;top:4px;right:calc(50% - 18px);display:grid;min-width:14px;height:14px;padding:0 3px;place-items:center;border:2px solid #fff;border-radius:99px;color:#fff;background:#f05d35;font-size:8px;font-style:normal}
 }
+
+/* Production typography: central scale from design-tokens.css, never below 12px. */
+.auth-story__top>span,.auth-kicker,.auth-story__stats span,.auth-panel>header small,.auth-field>span,.auth-form-row>span,.auth-form-row button,.auth-error,.auth-recovery,.demo-access>header span,.demo-access>header i{font-size:var(--type-caption)}
+.auth-panel>header p,.demo-access button,.state-screen p,.state-screen code{font-size:var(--type-body);line-height:var(--leading-body)}
+.auth-field input,.auth-submit{font-size:var(--type-control)}
+
+.contractor-sidebar__object>span,.contractor-sidebar__object small,.contractor-profile small,.object-mini-logo,.contractor-avatar,.contractor-shell .contractor-sidebar nav button small,.contractor-icon-button i,.contractor-welcome>div:first-child>span,.contractor-section header>div>span,.contractor-panel>header>div>span,.contractor-welcome__sync small,.contractor-metric__badge,.contractor-metric__value span,.contractor-metric__footer>span,.contractor-object__top>span,.contractor-object__title p,.contractor-object__stats small,.contractor-object__stats em,.contractor-attention-list small,.contractor-attention-list em,.contractor-attention-list time,.contractor-task-list small,.contractor-member__identity em,.contractor-member__identity>small,.contractor-member__scope>small,.contractor-member__scope button>small,.contractor-member__action>span,.contractor-mobile-nav span,.contractor-mobile-nav i{font-size:var(--type-caption);line-height:var(--leading-caption)}
+.contractor-sidebar__object b,.contractor-profile b,.contractor-search input,.contractor-shell .contractor-sidebar nav button,.contractor-sidebar__footer>button,.contractor-date,.contractor-create,.contractor-section>header>button,.contractor-panel>header>button,.contractor-panel>footer button,.contractor-object__open,.contractor-team__hero>button,.contractor-team__filters button,.contractor-member__scope button,.contractor-member__all,.contractor-member__action>button{font-size:var(--type-control)}
+.contractor-welcome p,.contractor-welcome__sync b,.contractor-metric__label,.contractor-metric__detail,.contractor-empty,.contractor-panel-empty,.contractor-attention-list b,.contractor-task-list b,.contractor-toast,.contractor-team__hero p,.contractor-team__summary>article small,.contractor-team__error,.contractor-team__state,.contractor-member__avatar{font-size:var(--type-body);line-height:var(--leading-body)}
+.contractor-object__stats b,.contractor-member__identity b{font-size:var(--type-body-strong)}
+.contractor-object__title h3{font-size:var(--type-card-title)}
+.contractor-section h2,.contractor-panel h2{font-size:var(--type-section-title)}
+.contractor-team__hero h1{font-size:var(--type-page-title)}
+.contractor-team__hero>div>span{font-size:var(--type-label)}
+.contractor-team__summary>article b{font-size:22px}
+
+@media (max-width:767px){
+  .contractor-metric{min-height:210px}
+  .contractor-welcome p,.contractor-team__hero p{font-size:var(--type-body)}
+  .contractor-metric__label,.contractor-metric__detail,.contractor-metric__footer>span,.contractor-metric__value span,.contractor-metric__badge{font-size:var(--type-caption)}
+  .contractor-team__hero h1{font-size:var(--type-page-title)}
+  .contractor-team__summary>article small{font-size:var(--type-caption)}
+  .contractor-mobile-nav{min-height:72px}
+}

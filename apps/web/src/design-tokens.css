@@ -1,0 +1,17 @@
+/*
+ * Production typography contract.
+ * Never use text smaller than --type-caption in application UI.
+ * Mobile layouts preserve the scale; they adapt composition, not readability.
+ */
+:root {
+  --type-caption: 12px;
+  --type-label: 13px;
+  --type-body: 14px;
+  --type-body-strong: 15px;
+  --type-control: 14px;
+  --type-card-title: 18px;
+  --type-section-title: 24px;
+  --type-page-title: clamp(30px, 2.4vw, 38px);
+  --leading-caption: 1.35;
+  --leading-body: 1.55;
+}
