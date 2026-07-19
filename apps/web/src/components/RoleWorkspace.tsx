@@ -99,6 +99,7 @@ function ContractorTeamView({ context, search, notify }: { context: MeContextRes
   const [roleFilter, setRoleFilter] = useState<'all' | 'foreman' | 'worker'>('all')
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -142,6 +143,7 @@ function ContractorTeamView({ context, search, notify }: { context: MeContextRes
       const response = await updateMemberObjects(member.id, objectIds)
       setMembers((current) => current.map((item) => item.id === member.id ? response.member : item))
       setDrafts((current) => ({ ...current, [member.id]: response.member.objectIds }))
+      setEditingId(null)
       notify(`Назначения сотрудника «${member.displayName}» сохранены`)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Не удалось сохранить назначения.')
@@ -150,9 +152,14 @@ function ContractorTeamView({ context, search, notify }: { context: MeContextRes
     }
   }
 
+  function cancelEditing(member: MemberSummary) {
+    setDrafts((current) => ({ ...current, [member.id]: member.objectIds }))
+    setEditingId(null)
+  }
+
   return <section className="contractor-team">
-    <header className="contractor-team__hero"><div><span>Сотрудники и доступ</span><h1>Команда организации</h1><p>Управляйте доступом сотрудников к объектам. Изменения сразу применяются сервером и влияют на данные каждой роли.</p></div><button type="button" onClick={() => notify('Приглашения сотрудников — следующий шаг F02')}><Plus size={18} />Пригласить сотрудника</button></header>
-    <div className="contractor-team__summary"><article><Users size={19} /><span><b>{members.length}</b><small>всего сотрудников</small></span></article><article><HardHat size={19} /><span><b>{members.filter((member) => member.role === 'worker').length}</b><small>рабочих</small></span></article><article><Building2 size={19} /><span><b>{context.objects.length}</b><small>активных объекта</small></span></article><div className="contractor-team__filters"><button className={roleFilter === 'all' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('all')}>Все</button><button className={roleFilter === 'foreman' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('foreman')}>Бригадиры</button><button className={roleFilter === 'worker' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('worker')}>Рабочие</button></div></div>
+    <header className="contractor-team__hero"><div><span>Сотрудники и доступ</span><h1>Команда</h1><p>Назначайте сотрудников на объекты. Изменения сразу применяются ко всем ролям.</p></div><button type="button" onClick={() => notify('Приглашения сотрудников — следующий шаг F02')}><Plus size={18} />Пригласить сотрудника</button></header>
+    <div className="contractor-team__summary"><article><Users size={19} /><span><b>{members.length}</b><small>сотрудников</small></span></article><article><HardHat size={19} /><span><b>{members.filter((member) => member.role === 'worker').length}</b><small>рабочих</small></span></article><article><Building2 size={19} /><span><b>{context.objects.length}</b><small>объектов</small></span></article><div className="contractor-team__filters"><button className={roleFilter === 'all' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('all')}>Все</button><button className={roleFilter === 'foreman' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('foreman')}>Бригадиры</button><button className={roleFilter === 'worker' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('worker')}>Рабочие</button></div></div>
     {error ? <div className="contractor-team__error"><AlertTriangle size={17} />{error}</div> : null}
     {status === 'loading' ? <div className="contractor-team__state"><LoaderCircle className="spin" size={22} />Загружаем сотрудников из PostgreSQL</div> : null}
     {status === 'error' ? <div className="contractor-team__state"><AlertTriangle size={22} />Список сотрудников временно недоступен</div> : null}
@@ -160,11 +167,15 @@ function ContractorTeamView({ context, search, notify }: { context: MeContextRes
       const draft = drafts[member.id] ?? []
       const changed = [...draft].sort().join(',') !== [...member.objectIds].sort().join(',')
       const immutable = member.role === 'contractor'
-      return <article className="contractor-member" key={member.id}>
+      const editing = editingId === member.id
+      const assignedObjects = context.objects.filter((object) => draft.includes(object.id))
+      const shownObjects = editing ? context.objects : assignedObjects.slice(0, 2)
+      const hiddenObjectCount = editing ? 0 : assignedObjects.length - shownObjects.length
+      return <article className={`contractor-member${editing ? ' is-editing' : ''}`} key={member.id}>
         <div className={`contractor-member__avatar contractor-member__avatar--${member.role}`}>{member.initials}</div>
         <div className="contractor-member__identity"><span><b>{member.displayName}</b><em>{memberRoleLabels[member.role]}</em></span><small>{member.phone}</small></div>
-        <div className="contractor-member__scope"><small>{immutable ? 'Доступ владельца' : 'Назначения на объекты'}</small><div>{immutable ? <span className="contractor-member__all"><CheckCircle2 size={14} />Вся организация</span> : context.objects.map((object) => <button className={draft.includes(object.id) ? 'is-selected' : ''} type="button" onClick={() => toggleObject(member.id, object.id)} key={object.id}><span>{draft.includes(object.id) ? <CheckCircle2 size={14} /> : <Building2 size={14} />}</span>{object.name}<small>{object.code}</small></button>)}</div></div>
-        <div className="contractor-member__action">{immutable ? <span>Владелец</span> : <button type="button" disabled={!changed || savingId === member.id} onClick={() => save(member)}>{savingId === member.id ? <LoaderCircle className="spin" size={15} /> : <CheckCircle2 size={15} />}{savingId === member.id ? 'Сохраняем' : changed ? 'Сохранить' : 'Сохранено'}</button>}</div>
+        <div className="contractor-member__scope"><header><small>{immutable ? 'Доступ' : editing ? 'Выберите объекты' : 'Назначен на объекты'}</small>{!immutable && !editing ? <button className="contractor-member__scope-edit" type="button" onClick={() => setEditingId(member.id)}><SlidersHorizontal size={14} />Изменить</button> : null}</header><div>{immutable ? <span className="contractor-member__all"><CheckCircle2 size={14} />Все объекты</span> : shownObjects.length ? <>{shownObjects.map((object) => <button className={draft.includes(object.id) ? 'is-selected' : ''} type="button" disabled={!editing} onClick={() => toggleObject(member.id, object.id)} key={object.id}><span>{draft.includes(object.id) ? <CheckCircle2 size={14} /> : <Building2 size={14} />}</span>{object.name}<small>{object.code}</small></button>)}{hiddenObjectCount > 0 ? <span className="contractor-member__more">+{hiddenObjectCount}</span> : null}</> : <span className="contractor-member__none">Объекты не назначены</span>}</div></div>
+        <div className="contractor-member__action">{immutable ? <span>Владелец</span> : editing ? <><button className="contractor-member__cancel" type="button" disabled={savingId === member.id} onClick={() => cancelEditing(member)}>Отмена</button><button type="button" disabled={!changed || savingId === member.id} onClick={() => save(member)}>{savingId === member.id ? <LoaderCircle className="spin" size={15} /> : <CheckCircle2 size={15} />}{savingId === member.id ? 'Сохраняем' : 'Сохранить'}</button></> : null}</div>
       </article>
     })}{visibleMembers.length === 0 ? <div className="contractor-team__state"><Search size={22} />Сотрудники по заданным условиям не найдены</div> : null}</div> : null}
   </section>
