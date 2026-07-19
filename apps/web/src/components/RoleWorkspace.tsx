@@ -2,7 +2,7 @@ import type { MeContextResponse, MemberSummary, NavigationKey, ObjectSummary, Ro
 import {
   AlertTriangle, ArrowUpRight, BarChart3, Bell, Building2, CalendarDays, CheckCircle2,
   ChevronDown, ChevronRight, ClipboardList, Clock3, Download, FileText, HardHat, Home,
-  LoaderCircle, LogOut, Menu, MessageCircle, MoreHorizontal, Plus, Search, Settings, SlidersHorizontal, Users,
+  LoaderCircle, LogOut, Menu, MessageCircle, MoreHorizontal, Phone, Plus, Search, Settings, SlidersHorizontal, Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -173,7 +173,7 @@ function ContractorTeamView({ context, search, notify }: { context: MeContextRes
       const hiddenObjectCount = editing ? 0 : assignedObjects.length - shownObjects.length
       return <article className={`contractor-member${editing ? ' is-editing' : ''}`} key={member.id}>
         <div className={`contractor-member__avatar contractor-member__avatar--${member.role}`}>{member.initials}</div>
-        <div className="contractor-member__identity"><span><b>{member.displayName}</b><em>{memberRoleLabels[member.role]}</em></span><small>{member.phone}</small></div>
+        <div className="contractor-member__identity"><span><b>{member.displayName}</b><em>{memberRoleLabels[member.role]}</em></span><small className="contractor-member__phone"><Phone size={13} />{member.phone}</small></div>
         <div className="contractor-member__scope"><header><small>{immutable ? 'Доступ' : editing ? 'Выберите объекты' : 'Назначен на объекты'}</small>{!immutable && !editing ? <button className="contractor-member__scope-edit" type="button" onClick={() => setEditingId(member.id)}><SlidersHorizontal size={14} />Изменить</button> : null}</header><div>{immutable ? <span className="contractor-member__all"><CheckCircle2 size={14} />Все объекты</span> : shownObjects.length ? <>{shownObjects.map((object) => <button className={draft.includes(object.id) ? 'is-selected' : ''} type="button" disabled={!editing} onClick={() => toggleObject(member.id, object.id)} key={object.id}><span>{draft.includes(object.id) ? <CheckCircle2 size={14} /> : <Building2 size={14} />}</span>{object.name}<small>{object.code}</small></button>)}{hiddenObjectCount > 0 ? <span className="contractor-member__more">+{hiddenObjectCount}</span> : null}</> : <span className="contractor-member__none">Объекты не назначены</span>}</div></div>
         <div className="contractor-member__action">{immutable ? <span>Владелец</span> : editing ? <><button className="contractor-member__cancel" type="button" disabled={savingId === member.id} onClick={() => cancelEditing(member)}>Отмена</button><button type="button" disabled={!changed || savingId === member.id} onClick={() => save(member)}>{savingId === member.id ? <LoaderCircle className="spin" size={15} /> : <CheckCircle2 size={15} />}{savingId === member.id ? 'Сохраняем' : 'Сохранить'}</button></> : null}</div>
       </article>

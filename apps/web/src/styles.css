@@ -380,6 +380,19 @@ button { cursor: pointer; }
   .contractor-mobile-nav{min-height:72px}
 }
 
+/* Employee identity and actions: make the high-value details scan first. */
+.contractor-member__identity>span{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px}
+.contractor-member__identity b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.contractor-member__identity em{justify-self:start;padding:3px 7px}
+.contractor-member__phone{display:inline-flex;max-width:max-content;align-items:center;gap:5px;margin-top:6px;padding:4px 7px;border:1px solid #dce7f1;border-radius:8px;color:#49637e;background:#f6f9fc;font-weight:600;letter-spacing:.01em}
+.contractor-member__phone svg{color:#2777ca;flex:0 0 auto}
+.contractor-member__scope button.contractor-member__scope-edit{min-height:34px;padding:0 10px;border:1px solid #bcd8fa;border-radius:9px;color:#0b67e8;background:#eff7ff;font-size:var(--type-control);font-weight:700}
+@media (max-width:767px){
+  .contractor-member__identity>span{grid-template-columns:minmax(0,1fr) auto;gap:6px}
+  .contractor-member__phone{margin-top:7px;padding:5px 8px;font-size:var(--type-caption)}
+  .contractor-member__scope button.contractor-member__scope-edit{width:auto;min-height:34px;padding:0 10px;border:1px solid #bcd8fa;border-radius:9px;background:#eff7ff}
+}
+
 /* Mobile team: quiet hierarchy, one decision per row. */
 @media (max-width:767px){
   .contractor-shell .contractor-content:has(.contractor-team){padding:14px 12px 92px}
@@ -423,4 +436,14 @@ button { cursor: pointer; }
   .contractor-member:not(.is-editing) .contractor-member__scope>div>button>small{display:none}
   .contractor-member__none{min-height:40px;align-self:flex-start;padding:0 11px;border-radius:11px}
   .contractor-member__more{min-height:36px;padding:0 9px;border-radius:10px}
+}
+
+/* Final mobile identity treatment: role, phone and action remain first-class. */
+@media (max-width:767px){
+  .contractor-member__identity>span{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px}
+  .contractor-member__identity b{width:auto;min-width:0;overflow:visible;line-height:1.25;white-space:normal}
+  .contractor-member__identity em{justify-self:start;padding:3px 7px}
+  .contractor-member__phone{display:inline-flex;max-width:max-content;align-items:center;gap:5px;margin-top:7px;padding:5px 8px;border:1px solid #dce7f1;border-radius:8px;color:#49637e;background:#f6f9fc;font-size:var(--type-caption);font-weight:600;letter-spacing:.01em}
+  .contractor-member__phone svg{color:#2777ca;flex:0 0 auto}
+  .contractor-member__scope button.contractor-member__scope-edit{width:auto;min-height:34px;padding:0 10px;border:1px solid #bcd8fa;border-radius:9px;color:#0b67e8;background:#eff7ff;font-size:var(--type-control);font-weight:700}
 }
