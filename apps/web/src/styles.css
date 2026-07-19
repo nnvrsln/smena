@@ -182,11 +182,15 @@ button { cursor: pointer; }
 .mobile-nav button.is-active { color: #1674d3; font-weight: 750; }
 
 /* Worker home — production adaptation of the approved mobile prototype */
-.worker-home__content { padding: 22px 16px 92px; overflow-y: auto; }
+.worker-home__content { padding: 0 0 92px; overflow-y: auto; }
 .worker-welcome { padding: 3px 2px 16px; }
 .worker-welcome span, .worker-today__title > div > span { color: #718198; font-size: 12px; font-weight: 700; text-transform: capitalize; }
 .worker-welcome h1 { margin: 6px 0 0; color: #152943; font-size: 26px; line-height: 1.06; letter-spacing: -.045em; }
-.worker-day-hero { padding: 12px; border: 1px solid #dbe5f0; border-radius: 24px; background: linear-gradient(145deg,#f9fcff,#eef5fb); box-shadow: 0 12px 30px rgba(45,77,107,.08); }
+.worker-home .worker-welcome { padding: 22px 16px 16px; }
+.worker-home .worker-welcome span { display: block; }
+.worker-home .mobile-header { padding-inline: 16px; }
+.worker-home .brand__name { font-size: 17px; font-weight: 760; letter-spacing: -.02em; }
+.worker-day-hero { margin: 0 14px; padding: 14px; border: 1px solid #dce6f2; border-radius: 26px; background: radial-gradient(circle at 92% -12%, rgba(69,174,255,.15), transparent 35%), linear-gradient(145deg,#fff,#f3f7fc); box-shadow: 0 18px 40px rgba(35,63,101,.11), 0 2px 7px rgba(35,63,101,.04); }
 .worker-day-hero__summary { display: flex; min-height: 72px; align-items: center; justify-content: space-between; padding: 0 3px 9px; }
 .worker-day-hero__time { display: flex; flex-direction: column; }
 .worker-day-hero__time time { color: #152943; font-size: 36px; font-weight: 750; line-height: .92; letter-spacing: -.065em; }
@@ -196,7 +200,7 @@ button { cursor: pointer; }
 .worker-day-hero__weather > span { display: flex; flex-direction: column; }
 .worker-day-hero__weather strong { color: #1b304d; font-size: 20px; line-height: 1; }
 .worker-day-hero__weather small { margin-top: 4px; color: #718197; font-size: 12px; }
-.worker-day-hero__shift { position: relative; overflow: hidden; padding: 14px; border-radius: 20px; color: #fff; background: linear-gradient(125deg,#6b7890,#8798ad); }
+.worker-day-hero__shift { position: relative; overflow: hidden; padding: 15px; border: 1px solid rgba(255,255,255,.12); border-radius: 21px; color: #fff; background: linear-gradient(125deg,#0f2d59,#075fc9 58%,#1399eb); box-shadow: 0 15px 30px rgba(8,83,181,.22), inset 0 1px 0 rgba(255,255,255,.13); }
 .worker-day-hero__shift--active { background: linear-gradient(125deg,#0b3f8d,#0878e9 61%,#12a6ef); }
 .worker-day-hero__shift-copy { position: relative; z-index: 1; display: grid; grid-template-columns: 60px minmax(0,1fr); align-items: center; gap: 11px; }
 .worker-day-hero__shift-copy > img { width: 60px; height: 60px; object-fit: contain; }
