@@ -34,7 +34,8 @@ function initialsFor(displayName: string): string {
 export class PostgresAccessRepository implements AccessRepository, OnModuleDestroy {
   private readonly pool: Pool
 
-  constructor(connectionString = process.env.DATABASE_URL) {
+  constructor() {
+    const connectionString = process.env.DATABASE_URL
     if (!connectionString) throw new Error('DATABASE_URL is required when SMENA_DATA_SOURCE=postgres')
     this.pool = new Pool({ connectionString, max: 5 })
   }

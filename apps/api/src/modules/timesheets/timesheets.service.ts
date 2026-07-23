@@ -23,11 +23,11 @@ function initialsFor(displayName: string) {
 @Injectable()
 export class TimesheetsService implements OnModuleDestroy {
   private readonly pool: Pool
-  constructor(connectionString = process.env.DATABASE_URL) { if (!connectionString) throw new Error('DATABASE_URL is required for timesheets'); this.pool = new Pool({ connectionString, max: 5 }) }
+  constructor() { const connectionString = process.env.DATABASE_URL; if (!connectionString) throw new Error('DATABASE_URL is required for timesheets'); this.pool = new Pool({ connectionString, max: 5 }) }
   async onModuleDestroy() { await this.pool.end() }
 
   async list(organizationId: string, objectIds: string[], date: string): Promise<TimesheetDayListResponse> {
-    const result = await this.pool.query<TimesheetRow>(`${this.daySelect()} where s.organization_id=$1 and s.object_id=any($2::uuid[]) and s.started_at_server::date=$3::date order by s.started_at_server desc`, [organizationId, objectIds, date])
+    const result = await this.pool.query<TimesheetRow>(`${this.daySelect()} where s.organization_id=$1 and s.object_id=any($2::uuid[]) and (s.started_at_server at time zone 'UTC')::date=$3::date order by s.started_at_server desc`, [organizationId, objectIds, date])
     return { date, days: result.rows.map((row) => this.map(row)) }
   }
 
@@ -73,7 +73,7 @@ export class TimesheetsService implements OnModuleDestroy {
        where s.organization_id = $1
          and s.object_id = any($2::uuid[])
          and s.user_id::text = $3
-         and s.started_at_server::date between $4::date and $5::date
+         and (s.started_at_server at time zone 'UTC')::date between $4::date and $5::date
        order by s.started_at_server desc`,
       [organizationId, objectIds, memberId, from, to],
     )
@@ -90,7 +90,7 @@ export class TimesheetsService implements OnModuleDestroy {
   }
 
   private daySelect() {
-    return `select s.id::text shift_id,s.started_at_server::date::text work_date,u.id::text user_id,u.display_name user_name,o.id::text object_id,o.name object_name,o.code object_code,s.started_at_server started_at,s.ended_at_server ended_at,floor(extract(epoch from (coalesce(s.ended_at_server,now())-s.started_at_server))/60)::integer worked_minutes,s.status shift_status from shifts s join users u on u.id=s.user_id join objects o on o.id=s.object_id and o.organization_id=s.organization_id`
+    return `select s.id::text shift_id,(s.started_at_server at time zone 'UTC')::date::text work_date,u.id::text user_id,u.display_name user_name,o.id::text object_id,o.name object_name,o.code object_code,s.started_at_server started_at,s.ended_at_server ended_at,floor(extract(epoch from (coalesce(s.ended_at_server,now())-s.started_at_server))/60)::integer worked_minutes,s.status shift_status from shifts s join users u on u.id=s.user_id join objects o on o.id=s.object_id and o.organization_id=s.organization_id`
   }
   private map(row: TimesheetRow): TimesheetDaySummary {
     return { shiftId: row.shift_id, date: row.work_date, userId: row.user_id, userName: row.user_name, userInitials: initialsFor(row.user_name), objectId: row.object_id, objectName: row.object_name, objectCode: row.object_code, startedAt: row.started_at.toISOString(), ...(row.ended_at ? { endedAt: row.ended_at.toISOString() } : {}), workedMinutes: Number(row.worked_minutes), status: row.shift_status === 'closed' ? 'complete' : 'open' }

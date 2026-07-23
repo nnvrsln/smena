@@ -6,7 +6,7 @@ import { PostgresAccessRepository } from './postgres-access.repository.js'
 const databaseUrl = process.env.DATABASE_URL
 
 test('PostgreSQL enforces organization and object scopes for all three roles', { skip: !databaseUrl }, async () => {
-  const repository = new PostgresAccessRepository(databaseUrl)
+  const repository = new PostgresAccessRepository()
   const pool = new Pool({ connectionString: databaseUrl })
 
   try {

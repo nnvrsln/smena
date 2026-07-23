@@ -16,7 +16,8 @@ interface ObjectRow {
 export class ObjectsService implements OnModuleDestroy {
   private readonly pool: Pool
 
-  constructor(connectionString = process.env.DATABASE_URL) {
+  constructor() {
+    const connectionString = process.env.DATABASE_URL
     if (!connectionString) throw new Error('DATABASE_URL is required for object management')
     this.pool = new Pool({ connectionString, max: 5 })
   }

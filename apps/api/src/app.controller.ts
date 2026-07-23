@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Inject, Par
 import type { ApiError, CreateObjectRequest, EndShiftRequest, LoginRequest, LoginResponse, MemberListResponse, MemberTimesheetHistoryResponse, ObjectMutationResponse, Permission, StartShiftRequest, TimesheetDayDetailResponse, TimesheetDayListResponse, UpdateMemberObjectsRequest, UpdateMemberObjectsResponse, UpdateObjectMembersRequest, UpdateObjectMembersResponse, UpdateObjectRequest } from '@smena/contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { can } from './modules/access/policy.js'
+import { HealthService } from './health.service.js'
 import { AuthService } from './modules/auth/auth.service.js'
 import { IdentityContextService } from './modules/identity/identity-context.service.js'
 import { MembersService } from './modules/members/members.service.js'
@@ -40,11 +41,19 @@ export class AppController {
     @Inject(ObjectsService) private readonly objectsService: ObjectsService,
     @Inject(ShiftsService) private readonly shiftsService: ShiftsService,
     @Inject(TimesheetsService) private readonly timesheetsService: TimesheetsService,
+    @Inject(HealthService) private readonly healthService: HealthService,
   ) {}
 
   @Get('/health')
-  health() {
-    return { status: 'ok', service: 'smena-api', dataSource: 'postgres' }
+  async health() {
+    const postgres = await this.healthService.postgresReady()
+    if (!postgres) {
+      throw new HttpException(
+        { code: 'SERVICE_NOT_READY', message: 'PostgreSQL is unavailable.' },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      )
+    }
+    return { status: 'ok', service: 'smena-api', checks: { api: 'ok', postgres: 'ok' } }
   }
 
   @Post('/api/v1/auth/login')

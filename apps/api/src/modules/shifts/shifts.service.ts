@@ -5,14 +5,14 @@ import { Pool } from 'pg'
 @Injectable()
 export class ShiftsService implements OnModuleDestroy {
   private readonly pool: Pool
-  constructor(connectionString = process.env.DATABASE_URL) { if (!connectionString) throw new Error('DATABASE_URL is required for shifts'); this.pool = new Pool({ connectionString, max: 5 }) }
+  constructor() { const connectionString = process.env.DATABASE_URL; if (!connectionString) throw new Error('DATABASE_URL is required for shifts'); this.pool = new Pool({ connectionString, max: 5 }) }
   async onModuleDestroy() { await this.pool.end() }
   async current(userId: string): Promise<CurrentShiftResponse> {
     const result = await this.pool.query(`select s.id::text, s.object_id::text, o.name object_name, o.code object_code, s.status, s.started_at_server, s.ended_at_server, s.start_method, floor(extract(epoch from (coalesce(s.ended_at_server,now())-s.started_at_server))/60)::integer worked_minutes from shifts s join objects o on o.id=s.object_id where s.user_id=$1 and s.status='open' order by s.started_at_server desc limit 1`, [userId])
     const row = result.rows[0]; return { shift: row ? this.map(row) : null }
   }
   async today(userId: string): Promise<TodayShiftResponse> {
-    const result = await this.pool.query(`select s.id::text, s.object_id::text, o.name object_name, o.code object_code, s.status, s.started_at_server, s.ended_at_server, s.start_method, floor(extract(epoch from (coalesce(s.ended_at_server,now())-s.started_at_server))/60)::integer worked_minutes from shifts s join objects o on o.id=s.object_id where s.user_id=$1 and s.started_at_server>=date_trunc('day',now()) and s.started_at_server<date_trunc('day',now())+interval '1 day' order by s.started_at_server desc limit 1`, [userId])
+    const result = await this.pool.query(`select s.id::text, s.object_id::text, o.name object_name, o.code object_code, s.status, s.started_at_server, s.ended_at_server, s.start_method, floor(extract(epoch from (coalesce(s.ended_at_server,now())-s.started_at_server))/60)::integer worked_minutes from shifts s join objects o on o.id=s.object_id where s.user_id=$1 and s.started_at_server>=date_trunc('day',now() at time zone 'UTC') at time zone 'UTC' and s.started_at_server<(date_trunc('day',now() at time zone 'UTC')+interval '1 day') at time zone 'UTC' order by s.started_at_server desc limit 1`, [userId])
     const row = result.rows[0]; return { shift: row ? this.map(row) : null }
   }
   async start(userId: string, organizationId: string, body: Partial<StartShiftRequest>): Promise<{ shift: ShiftSummary }> {

@@ -20,4 +20,14 @@ npm run db:status
 npm run db:stop
 ```
 
+Миграции для development, test, staging и production применяются одной командой:
+
+```powershell
+npm run db:migrate
+```
+
+Среда определяется `APP_ENV`. Файл `002_development_seed.sql` применяется только в development и test. Применённые миграции записываются в `smena_schema_migrations` с checksum и повторно не выполняются.
+
+Резервное копирование и безопасное тестовое восстановление описаны в `docs/STAGING_RUNBOOK.md`.
+
 `.tools/` можно удалить без потери исходного кода, но локальная база и скачанный PostgreSQL тогда потребуют повторной подготовки.

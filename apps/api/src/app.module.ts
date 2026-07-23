@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { AppController } from './app.controller.js'
+import { HealthService } from './health.service.js'
 import { AuthService } from './modules/auth/auth.service.js'
 import { ACCESS_REPOSITORY, IdentityContextService } from './modules/identity/identity-context.service.js'
 import { PostgresAccessRepository } from './modules/identity/postgres-access.repository.js'
@@ -12,6 +13,7 @@ import { TimesheetsService } from './modules/timesheets/timesheets.service.js'
   controllers: [AppController],
   providers: [
     IdentityContextService,
+    HealthService,
     AuthService,
     MembersService,
     ObjectsService,
