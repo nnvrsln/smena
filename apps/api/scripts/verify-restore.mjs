@@ -58,7 +58,7 @@ try {
       Number(row?.organizations) !== 2
       || Number(row.objects) !== 4
       || Number(row.users) !== 3
-      || Number(row.migrations) !== 4
+      || Number(row.migrations) !== 5
     ) {
       throw new Error(`Unexpected restored data: ${JSON.stringify(row)}`)
     }

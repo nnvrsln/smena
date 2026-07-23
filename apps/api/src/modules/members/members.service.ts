@@ -6,6 +6,7 @@ interface MemberRow {
   id: string
   display_name: string
   phone_normalized: string
+  specialization: string | null
   role: Role
   status: 'active' | 'inactive'
   object_ids: string[]
@@ -42,6 +43,7 @@ export class MembersService implements OnModuleDestroy {
          u.id::text,
          u.display_name,
          u.phone_normalized,
+         u.specialization,
          m.role,
          m.status,
          today_shift.today_shift_status,
@@ -70,7 +72,7 @@ export class MembersService implements OnModuleDestroy {
          limit 1
        ) today_shift on true
        where m.organization_id = $1
-       group by u.id, u.display_name, u.phone_normalized, m.role, m.status, m.created_at, m.id,
+       group by u.id, u.display_name, u.phone_normalized, u.specialization, m.role, m.status, m.created_at, m.id,
          today_shift.today_shift_status, today_shift.today_object_id
        order by
          case m.role when 'contractor' then 1 when 'foreman' then 2 else 3 end,
@@ -226,6 +228,7 @@ export class MembersService implements OnModuleDestroy {
          u.id::text,
          u.display_name,
          u.phone_normalized,
+         u.specialization,
          m.role,
          m.status,
          today_shift.today_shift_status,
@@ -254,7 +257,7 @@ export class MembersService implements OnModuleDestroy {
          limit 1
        ) today_shift on true
        where m.organization_id = $1 and m.user_id = $2
-       group by u.id, u.display_name, u.phone_normalized, m.role, m.status,
+       group by u.id, u.display_name, u.phone_normalized, u.specialization, m.role, m.status,
          today_shift.today_shift_status, today_shift.today_object_id`,
       [organizationId, memberId],
     )
@@ -267,6 +270,7 @@ export class MembersService implements OnModuleDestroy {
     displayName: row.display_name,
     initials: initialsFor(row.display_name),
     phone: row.phone_normalized,
+    ...(row.specialization ? { specialization: row.specialization } : {}),
     role: row.role,
     status: row.status,
     objectIds: row.object_ids,

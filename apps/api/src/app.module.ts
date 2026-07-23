@@ -5,6 +5,7 @@ import { AuthService } from './modules/auth/auth.service.js'
 import { ACCESS_REPOSITORY, IdentityContextService } from './modules/identity/identity-context.service.js'
 import { PostgresAccessRepository } from './modules/identity/postgres-access.repository.js'
 import { MembersService } from './modules/members/members.service.js'
+import { InvitationsService } from './modules/invitations/invitations.service.js'
 import { ObjectsService } from './modules/objects/objects.service.js'
 import { ShiftsService } from './modules/shifts/shifts.service.js'
 import { TimesheetsService } from './modules/timesheets/timesheets.service.js'
@@ -16,6 +17,7 @@ import { TimesheetsService } from './modules/timesheets/timesheets.service.js'
     HealthService,
     AuthService,
     MembersService,
+    InvitationsService,
     ObjectsService,
     ShiftsService,
     TimesheetsService,

@@ -6,6 +6,7 @@ import type { AccessRepository, IdentityRecord } from './access-repository.js'
 interface IdentityRow {
   user_id: string
   display_name: string
+  first_name: string | null
   organization_id: string
   organization_name: string
   role: Role
@@ -49,6 +50,7 @@ export class PostgresAccessRepository implements AccessRepository, OnModuleDestr
       `select
          u.id::text as user_id,
          u.display_name,
+         u.first_name,
          o.id::text as organization_id,
          o.name as organization_name,
          m.role
@@ -69,6 +71,7 @@ export class PostgresAccessRepository implements AccessRepository, OnModuleDestr
       `select
          u.id::text as user_id,
          u.display_name,
+         u.first_name,
          o.id::text as organization_id,
          o.name as organization_name,
          m.role
@@ -108,6 +111,7 @@ export class PostgresAccessRepository implements AccessRepository, OnModuleDestr
       user: {
         id: row.user_id,
         displayName: row.display_name,
+        ...(row.first_name ? { firstName: row.first_name } : {}),
         initials: initialsFor(row.display_name),
         role: row.role,
       },

@@ -391,3 +391,139 @@ test('worker completes the QR shift lifecycle and creates the first timesheet da
     await app.close()
   }
 })
+
+test('contractor invitation creates one scoped account and rejects reused, revoked or expired links', async () => {
+  const module = await Test.createTestingModule({ imports: [AppModule] }).compile()
+  const app = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter())
+  await app.init()
+  await app.getHttpAdapter().getInstance().ready()
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+  const invitationIds: string[] = []
+  const createdUserIds: string[] = []
+
+  try {
+    const contractorLogin = await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: { phone: '+7 999 000-00-01', password: 'Smena2026!' } })
+    const contractorCookie = (Array.isArray(contractorLogin.headers['set-cookie']) ? contractorLogin.headers['set-cookie'][0] : contractorLogin.headers['set-cookie'])?.split(';')[0]
+    assert.ok(contractorCookie)
+    const objectIds = contractorLogin.json().context.objects.slice(0, 2).map((object: { id: string }) => object.id)
+
+    const foremanLogin = await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: { phone: '+7 999 000-00-02', password: 'Smena2026!' } })
+    const foremanCookie = (Array.isArray(foremanLogin.headers['set-cookie']) ? foremanLogin.headers['set-cookie'][0] : foremanLogin.headers['set-cookie'])?.split(';')[0]
+    const forbidden = await app.inject({
+      method: 'POST', url: '/api/v1/invitations', headers: { cookie: foremanCookie },
+      payload: { role: 'worker', objectIds: [objectIds[0]], expiresInDays: 7 },
+    })
+    assert.equal(forbidden.statusCode, 403)
+
+    const invalidScope = await app.inject({
+      method: 'POST', url: '/api/v1/invitations', headers: { cookie: contractorCookie },
+      payload: { role: 'worker', objectIds: ['30000000-0000-4000-8000-000000000004'], expiresInDays: 7 },
+    })
+    assert.equal(invalidScope.statusCode, 400)
+
+    const created = await app.inject({
+      method: 'POST', url: '/api/v1/invitations', headers: { cookie: contractorCookie },
+      payload: { role: 'worker', objectIds, expiresInDays: 7, internalNote: 'Монтажная бригада' },
+    })
+    assert.equal(created.statusCode, 201)
+    const invitationId = created.json().invitation.id as string
+    invitationIds.push(invitationId)
+    const token = new URL(created.json().link).pathname.split('/').pop()
+    assert.ok(token)
+    const stored = await pool.query<{ token_hash: string; internal_note: string }>('select token_hash,internal_note from invitations where id=$1', [invitationId])
+    assert.notEqual(stored.rows[0]?.token_hash, token)
+    assert.equal(stored.rows[0]?.internal_note, 'Монтажная бригада')
+
+    const preview = await app.inject({ method: 'GET', url: `/api/v1/invitations/${token}` })
+    assert.equal(preview.statusCode, 200)
+    assert.equal(preview.json().organization.name, 'Смена Строй')
+    assert.equal(preview.json().role, 'worker')
+    assert.deepEqual(preview.json().objects.map((object: { id: string }) => object.id), objectIds)
+    assert.equal('internalNote' in preview.json(), false)
+    assert.equal('createdBy' in preview.json(), false)
+
+    const registered = await app.inject({
+      method: 'POST', url: `/api/v1/invitations/${token}/register`,
+      payload: {
+        lastName: 'Соколов', firstName: 'Максим', middleName: 'Олегович',
+        specialization: 'Монтажник', phone: '+7 999 111-22-33', password: 'Invite-Strong-2026',
+      },
+    })
+    assert.equal(registered.statusCode, 201)
+    assert.equal(registered.json().context.user.role, 'worker')
+    assert.deepEqual(registered.json().context.objects.map((object: { id: string }) => object.id), objectIds)
+    const registrationCookie = (Array.isArray(registered.headers['set-cookie']) ? registered.headers['set-cookie'][0] : registered.headers['set-cookie'])?.split(';')[0]
+    assert.ok(registrationCookie?.startsWith('smena_session='))
+    const createdUserId = registered.json().context.user.id as string
+    createdUserIds.push(createdUserId)
+
+    const profile = await pool.query<{ first_name: string; last_name: string; middle_name: string; specialization: string; password_hash: string }>(
+      'select first_name,last_name,middle_name,specialization,password_hash from users where id=$1',
+      [createdUserId],
+    )
+    assert.deepEqual(
+      { firstName: profile.rows[0]?.first_name, lastName: profile.rows[0]?.last_name, middleName: profile.rows[0]?.middle_name, specialization: profile.rows[0]?.specialization },
+      { firstName: 'Максим', lastName: 'Соколов', middleName: 'Олегович', specialization: 'Монтажник' },
+    )
+    assert.match(profile.rows[0]?.password_hash ?? '', /^scrypt\$[a-f0-9]+\$[a-f0-9]+$/u)
+
+    const repeated = await app.inject({
+      method: 'POST', url: `/api/v1/invitations/${token}/register`,
+      payload: { lastName: 'Другой', firstName: 'Человек', specialization: 'Рабочий', phone: '+7 999 111-22-34', password: 'Invite-Strong-2026' },
+    })
+    assert.equal(repeated.statusCode, 410)
+    assert.equal(repeated.json().code, 'INVITATION_USED')
+
+    const login = await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: { phone: '8 (999) 111-22-33', password: 'Invite-Strong-2026' } })
+    assert.equal(login.statusCode, 201)
+    assert.equal(login.json().context.user.id, createdUserId)
+
+    const duplicateInvitation = await app.inject({
+      method: 'POST', url: '/api/v1/invitations', headers: { cookie: contractorCookie },
+      payload: { role: 'foreman', objectIds: [objectIds[0]], expiresInDays: 3 },
+    })
+    invitationIds.push(duplicateInvitation.json().invitation.id)
+    const duplicateToken = new URL(duplicateInvitation.json().link).pathname.split('/').pop()
+    const duplicatePhone = await app.inject({
+      method: 'POST', url: `/api/v1/invitations/${duplicateToken}/register`,
+      payload: { lastName: 'Соколов', firstName: 'Максим', specialization: 'Бригадир', phone: '+7 999 111-22-33', password: 'Another-Strong-2026' },
+    })
+    assert.equal(duplicatePhone.statusCode, 409)
+    assert.equal(duplicatePhone.json().code, 'PHONE_ALREADY_USED')
+
+    const revokedInvitation = await app.inject({
+      method: 'POST', url: '/api/v1/invitations', headers: { cookie: contractorCookie },
+      payload: { role: 'worker', objectIds: [objectIds[0]], expiresInDays: 1 },
+    })
+    const revokedId = revokedInvitation.json().invitation.id as string
+    invitationIds.push(revokedId)
+    const revokedToken = new URL(revokedInvitation.json().link).pathname.split('/').pop()
+    const revoked = await app.inject({ method: 'DELETE', url: `/api/v1/invitations/${revokedId}`, headers: { cookie: contractorCookie } })
+    assert.equal(revoked.statusCode, 200)
+    const revokedPreview = await app.inject({ method: 'GET', url: `/api/v1/invitations/${revokedToken}` })
+    assert.equal(revokedPreview.statusCode, 410)
+    assert.equal(revokedPreview.json().code, 'INVITATION_REVOKED')
+
+    const expiredInvitation = await app.inject({
+      method: 'POST', url: '/api/v1/invitations', headers: { cookie: contractorCookie },
+      payload: { role: 'worker', objectIds: [objectIds[0]], expiresInDays: 1 },
+    })
+    const expiredId = expiredInvitation.json().invitation.id as string
+    invitationIds.push(expiredId)
+    const expiredToken = new URL(expiredInvitation.json().link).pathname.split('/').pop()
+    await pool.query(`update invitations set created_at=now()-interval '2 days',expires_at=now()-interval '1 day' where id=$1`, [expiredId])
+    const expiredPreview = await app.inject({ method: 'GET', url: `/api/v1/invitations/${expiredToken}` })
+    assert.equal(expiredPreview.statusCode, 410)
+    assert.equal(expiredPreview.json().code, 'INVITATION_EXPIRED')
+  } finally {
+    if (invitationIds.length) await pool.query('delete from invitations where id=any($1::uuid[])', [invitationIds])
+    for (const userId of createdUserIds) {
+      await pool.query('delete from auth_sessions where user_id=$1', [userId])
+      await pool.query('delete from object_memberships where user_id=$1', [userId])
+      await pool.query('delete from memberships where user_id=$1', [userId])
+      await pool.query('delete from users where id=$1', [userId])
+    }
+    await pool.end()
+    await app.close()
+  }
+})

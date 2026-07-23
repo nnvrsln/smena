@@ -1,4 +1,4 @@
-import type { ApiError, CreateObjectRequest, CurrentShiftResponse, LoginRequest, LoginResponse, MeContextResponse, MemberListResponse, MemberTimesheetHistoryResponse, ObjectMutationResponse, StartShiftRequest, StartShiftResponse, UpdateMemberObjectsResponse, UpdateObjectMembersResponse, UpdateObjectRequest } from '@smena/contracts'
+import type { ApiError, CreateInvitationRequest, CreateInvitationResponse, CreateObjectRequest, CurrentShiftResponse, InvitationListResponse, InvitationPreviewResponse, LoginRequest, LoginResponse, MeContextResponse, MemberListResponse, MemberTimesheetHistoryResponse, ObjectMutationResponse, RegisterInvitationRequest, RegisterInvitationResponse, StartShiftRequest, StartShiftResponse, UpdateMemberObjectsResponse, UpdateObjectMembersResponse, UpdateObjectRequest } from '@smena/contracts'
 
 export class ApiRequestError extends Error {
   constructor(public readonly status: number, public readonly code: string, message: string) {
@@ -32,6 +32,48 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 export async function logout(): Promise<void> {
   const response = await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' })
   if (!response.ok && response.status !== 204) throw await responseError(response)
+}
+
+export async function loadInvitation(token: string, signal?: AbortSignal): Promise<InvitationPreviewResponse> {
+  const response = await fetch(`/api/v1/invitations/${encodeURIComponent(token)}`, { signal })
+  if (!response.ok) throw await responseError(response)
+  return response.json() as Promise<InvitationPreviewResponse>
+}
+
+export async function registerInvitation(token: string, body: RegisterInvitationRequest): Promise<RegisterInvitationResponse> {
+  const response = await fetch(`/api/v1/invitations/${encodeURIComponent(token)}/register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw await responseError(response)
+  return response.json() as Promise<RegisterInvitationResponse>
+}
+
+export async function loadInvitations(signal?: AbortSignal): Promise<InvitationListResponse> {
+  const response = await fetch('/api/v1/invitations', { credentials: 'include', signal })
+  if (!response.ok) throw await responseError(response)
+  return response.json() as Promise<InvitationListResponse>
+}
+
+export async function createInvitation(body: CreateInvitationRequest): Promise<CreateInvitationResponse> {
+  const response = await fetch('/api/v1/invitations', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw await responseError(response)
+  return response.json() as Promise<CreateInvitationResponse>
+}
+
+export async function revokeInvitation(invitationId: string): Promise<void> {
+  const response = await fetch(`/api/v1/invitations/${encodeURIComponent(invitationId)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+  if (!response.ok) throw await responseError(response)
 }
 
 export async function loadMembers(signal?: AbortSignal): Promise<MemberListResponse> {

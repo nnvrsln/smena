@@ -55,7 +55,7 @@ try {
         (select count(*) from smena_schema_migrations) as migration_count
     `)
     const row = result.rows[0]
-    if (!row?.organizations || !row.auth_sessions || !row.shifts || Number(row.migration_count) !== 4) {
+    if (!row?.organizations || !row.auth_sessions || !row.shifts || Number(row.migration_count) !== 5) {
       throw new Error(`Unexpected migrated schema: ${JSON.stringify(row)}`)
     }
   } finally {

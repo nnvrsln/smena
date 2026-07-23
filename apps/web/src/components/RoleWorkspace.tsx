@@ -9,6 +9,7 @@ import type { FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createObject, endShift, loadMemberTimesheetHistory, loadMembers, loadTimesheetDay, loadTimesheetDays, loadTodayShift, startShift, updateMemberObjects, updateObject, updateObjectMembers } from '../api/context'
 import { Brand } from './Brand'
+import { InvitationManager } from './InvitationManager'
 
 const navigationIcons: Record<NavigationKey, LucideIcon> = {
   overview: Home, objects: Building2, team: Users, tasks: ClipboardList,
@@ -133,6 +134,7 @@ function ContractorTeamView({ context, search, onClearSearch, notify, onOpenMemb
   const [savingId, setSavingId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [inviteOpen, setInviteOpen] = useState(false)
   const editingIdRef = useRef<string | null>(null)
   editingIdRef.current = editingId
 
@@ -165,7 +167,7 @@ function ContractorTeamView({ context, search, onClearSearch, notify, onOpenMemb
     const query = search.trim().toLocaleLowerCase('ru-RU')
     return members.filter((member) => {
       const matchesRole = roleFilter === 'all' || member.role === roleFilter
-      const matchesSearch = !query || `${member.displayName} ${member.phone} ${memberRoleLabels[member.role]} ${memberSpecializations[member.role]}`.toLocaleLowerCase('ru-RU').includes(query)
+      const matchesSearch = !query || `${member.displayName} ${member.phone} ${memberRoleLabels[member.role]} ${member.specialization ?? memberSpecializations[member.role]}`.toLocaleLowerCase('ru-RU').includes(query)
       return matchesRole && matchesSearch
     })
   }, [members, roleFilter, search])
@@ -205,8 +207,9 @@ function ContractorTeamView({ context, search, onClearSearch, notify, onOpenMemb
     onClearSearch()
   }
 
-  return <section className="contractor-page contractor-team">
-    <header className="contractor-page__hero contractor-team__hero"><div><span>Люди и назначения</span><h1>Команда организации</h1><p>Смотрите состав команды и назначайте сотрудников на объекты.</p></div><button type="button" onClick={resetDirectory}><Users size={18} />Показать всех</button></header>
+  return <>
+  <section className="contractor-page contractor-team">
+    <header className="contractor-page__hero contractor-team__hero"><div><span>Люди и назначения</span><h1>Команда организации</h1><p>Смотрите состав команды и назначайте сотрудников на объекты.</p></div><div className="contractor-team__hero-actions"><button className="is-secondary" type="button" onClick={resetDirectory}><Users size={18} />Показать всех</button><button type="button" onClick={() => setInviteOpen(true)}><Plus size={18} />Пригласить</button></div></header>
     <div className="contractor-page__summary contractor-team__summary" aria-label="Сводка по команде"><article><span className="is-blue"><Users size={19} /></span><div><b>{members.length}</b><small>сотрудников</small></div></article><article><span className="is-green"><HardHat size={19} /></span><div><b>{members.filter((member) => member.role === 'worker').length}</b><small>рабочих</small></div></article><article><span className="is-orange"><Building2 size={19} /></span><div><b>{context.objects.length}</b><small>активных объектов</small></div></article></div>
     <div className="contractor-page__toolbar contractor-team__toolbar"><div><b>{search.trim() || roleFilter !== 'all' ? `Найдено: ${visibleMembers.length}` : 'Все сотрудники'}</b><small>{visibleMembers.length} в списке</small></div><div className="contractor-team__filters" aria-label="Фильтр сотрудников"><button className={roleFilter === 'all' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('all')}>Все</button><button className={roleFilter === 'foreman' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('foreman')}>Бригадиры</button><button className={roleFilter === 'worker' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('worker')}>Рабочие</button></div></div>
     {error ? <div className="contractor-team__error"><AlertTriangle size={17} />{error}</div> : null}
@@ -232,7 +235,7 @@ function ContractorTeamView({ context, search, onClearSearch, notify, onOpenMemb
         <div className="team-member-card__body">
           <header className="team-member-card__person">
             <div className="team-member-card__avatar">{member.initials}</div>
-            <div><span className="team-member-card__role">{memberRoleLabels[member.role]}</span><h2>{member.displayName}</h2><p><HardHat size={14} />{memberSpecializations[member.role]}</p><em className={`team-member-card__status team-member-card__status--${member.todayStatus}`}><i />{statusLabel}</em></div>
+            <div><span className="team-member-card__role">{memberRoleLabels[member.role]}</span><h2>{member.displayName}</h2><p><HardHat size={14} />{member.specialization ?? memberSpecializations[member.role]}</p><em className={`team-member-card__status team-member-card__status--${member.todayStatus}`}><i />{statusLabel}</em></div>
             {!immutable && !editing ? <button type="button" aria-label={`Настроить назначения сотрудника ${member.displayName}`} onClick={() => setEditingId(member.id)}><Pencil size={17} /></button> : null}
           </header>
           <a className="team-member-card__phone" href={`tel:${member.phone}`} aria-label={`Позвонить сотруднику ${member.displayName} по номеру ${formatMemberPhone(member.phone)}`}><Phone size={15} /><span>{formatMemberPhone(member.phone)}</span></a>
@@ -245,6 +248,8 @@ function ContractorTeamView({ context, search, onClearSearch, notify, onOpenMemb
       </article>
     })}{visibleMembers.length === 0 ? <div className="contractor-team__state"><Search size={22} />Сотрудники по заданным условиям не найдены</div> : null}</div> : null}
   </section>
+  {inviteOpen ? <InvitationManager objects={context.objects} onClose={() => setInviteOpen(false)} /> : null}
+  </>
 }
 
 function ContractorObjectCard({ object, index, onOpen }: { object: ObjectSummary; index: number; onOpen: () => void }) {
@@ -479,7 +484,7 @@ function MemberProfileView({ memberId, objects, onBack }: { memberId: string; ob
 
   return <section className="contractor-page employee-profile">
     <header className="contractor-page__hero employee-profile__hero">
-      <div><span>Сотрудник и рабочее время</span><h1>{member?.displayName ?? 'Карточка сотрудника'}</h1><p>{member ? `${memberRoleLabels[member.role]} · ${memberSpecializations[member.role]}` : 'Загружаем профиль и историю смен.'}</p></div>
+      <div><span>Сотрудник и рабочее время</span><h1>{member?.displayName ?? 'Карточка сотрудника'}</h1><p>{member ? `${memberRoleLabels[member.role]} · ${member.specialization ?? memberSpecializations[member.role]}` : 'Загружаем профиль и историю смен.'}</p></div>
       <button type="button" onClick={onBack}><ArrowLeft size={18} />Назад</button>
     </header>
 
@@ -608,7 +613,8 @@ function WorkerHomeWorkspace({ context }: { context: MeContextResponse }) {
   const shiftObjectCode = shift?.objectCode ?? object?.code ?? ''
   const shiftTitle = shiftState === 'active' ? 'Смена идёт' : shiftState === 'finished' ? 'Смена завершена' : 'Смена не начата'
   const shiftDetail = shiftState === 'active' ? `Начата в ${formatShiftTime(shift!.startedAtServer)} · идёт сейчас` : shiftState === 'finished' ? `${formatShiftTime(shift!.startedAtServer)}–${formatShiftTime(shift!.endedAtServer!)} · ${formatWorkedMinutes(shift!.workedMinutes)}` : 'Готово к началу рабочего дня'
-  return <main className="mobile-shell"><section className="phone-app worker-home"><header className="mobile-header"><Brand compact /><div><button type="button" aria-label="Уведомления"><Bell size={20} /></button><span>{context.user.initials}</span></div></header><div className="mobile-content worker-home__content"><section className="worker-welcome"><span>{dateLabel}</span><h1>Доброе утро, {context.user.displayName.split(' ').at(-1)}</h1></section><section className="worker-day-hero"><header className="worker-day-hero__summary"><div className="worker-day-hero__time"><time>{now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</time></div><div className="worker-day-hero__weather"><img src="/graphics/weather/weather-sunny-3d.png" alt="Погода: ясно" /><span><strong>+18°</strong><small>Ясно</small></span></div></header><div className={`worker-day-hero__shift worker-day-hero__shift--${shiftState}`}><div className="worker-day-hero__shift-copy"><img src={`/graphics/shift/shift-${shiftState}-apple.png`} alt="" /><span><small>{shiftObjectName} · {shiftObjectCode}</small><b>{shiftTitle}</b><em>{shiftDetail}</em></span></div>{shiftState === 'active' ? <SwipeAction label="Свайп, чтобы завершить смену" onComplete={() => setShowEnd(true)} /> : shiftState === 'finished' ? <div className="worker-shift-finished"><CheckCircle2 size={17} /><span><b>День сформирован</b><small>Сохранён в табеле</small></span></div> : <SwipeAction label="Свайп, чтобы начать смену" onComplete={() => setShowQr(true)} />}</div></section></div><nav className="mobile-nav">{context.navigation.slice(0, 4).map((item, index) => { const Icon = navigationIcons[item.key]; return <button className={index === 0 ? 'is-active' : ''} type="button" key={item.key}><Icon size={19} /><span>{item.label}</span></button> })}</nav>{showQr ? <QrModal objectName={object?.name} onClose={() => setShowQr(false)} qrToken={qrToken} onToken={setQrToken} onSubmit={start} /> : null}{showEnd && shift?.status === 'open' ? <EndShiftModal shift={shift} busy={ending} onClose={() => setShowEnd(false)} onConfirm={() => void finish()} /> : null}{notice ? <button className="worker-toast" type="button" onClick={() => setNotice(null)}>{notice}</button> : null}</section></main>
+  const workerFirstName = context.user.firstName ?? context.user.displayName.split(' ')[1] ?? context.user.displayName
+  return <main className="mobile-shell"><section className="phone-app worker-home"><header className="mobile-header"><Brand compact /><div><button type="button" aria-label="Уведомления"><Bell size={20} /></button><span>{context.user.initials}</span></div></header><div className="mobile-content worker-home__content"><section className="worker-welcome"><span>{dateLabel}</span><h1>Доброе утро, {workerFirstName}</h1></section><section className="worker-day-hero"><header className="worker-day-hero__summary"><div className="worker-day-hero__time"><time>{now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</time></div><div className="worker-day-hero__weather"><img src="/graphics/weather/weather-sunny-3d.png" alt="Погода: ясно" /><span><strong>+18°</strong><small>Ясно</small></span></div></header><div className={`worker-day-hero__shift worker-day-hero__shift--${shiftState}`}><div className="worker-day-hero__shift-copy"><img src={`/graphics/shift/shift-${shiftState}-apple.png`} alt="" /><span><small>{shiftObjectName} · {shiftObjectCode}</small><b>{shiftTitle}</b><em>{shiftDetail}</em></span></div>{shiftState === 'active' ? <SwipeAction label="Свайп, чтобы завершить смену" onComplete={() => setShowEnd(true)} /> : shiftState === 'finished' ? <div className="worker-shift-finished"><CheckCircle2 size={17} /><span><b>День сформирован</b><small>Сохранён в табеле</small></span></div> : <SwipeAction label="Свайп, чтобы начать смену" onComplete={() => setShowQr(true)} />}</div></section></div><nav className="mobile-nav">{context.navigation.slice(0, 4).map((item, index) => { const Icon = navigationIcons[item.key]; return <button className={index === 0 ? 'is-active' : ''} type="button" key={item.key}><Icon size={19} /><span>{item.label}</span></button> })}</nav>{showQr ? <QrModal objectName={object?.name} onClose={() => setShowQr(false)} qrToken={qrToken} onToken={setQrToken} onSubmit={start} /> : null}{showEnd && shift?.status === 'open' ? <EndShiftModal shift={shift} busy={ending} onClose={() => setShowEnd(false)} onConfirm={() => void finish()} /> : null}{notice ? <button className="worker-toast" type="button" onClick={() => setNotice(null)}>{notice}</button> : null}</section></main>
 }
 
 function formatShiftTime(value: string) { return new Date(value).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) }

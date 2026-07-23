@@ -1,11 +1,12 @@
-import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Post, Put, Query, Req, Res } from '@nestjs/common'
-import type { ApiError, CreateObjectRequest, EndShiftRequest, LoginRequest, LoginResponse, MemberListResponse, MemberTimesheetHistoryResponse, ObjectMutationResponse, Permission, StartShiftRequest, TimesheetDayDetailResponse, TimesheetDayListResponse, UpdateMemberObjectsRequest, UpdateMemberObjectsResponse, UpdateObjectMembersRequest, UpdateObjectMembersResponse, UpdateObjectRequest } from '@smena/contracts'
+import { Body, Controller, Delete, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Post, Put, Query, Req, Res } from '@nestjs/common'
+import type { ApiError, CreateInvitationRequest, CreateInvitationResponse, CreateObjectRequest, EndShiftRequest, InvitationListResponse, InvitationPreviewResponse, LoginRequest, LoginResponse, MemberListResponse, MemberTimesheetHistoryResponse, ObjectMutationResponse, Permission, RegisterInvitationRequest, RegisterInvitationResponse, StartShiftRequest, TimesheetDayDetailResponse, TimesheetDayListResponse, UpdateMemberObjectsRequest, UpdateMemberObjectsResponse, UpdateObjectMembersRequest, UpdateObjectMembersResponse, UpdateObjectRequest } from '@smena/contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { can } from './modules/access/policy.js'
 import { HealthService } from './health.service.js'
 import { AuthService } from './modules/auth/auth.service.js'
 import { IdentityContextService } from './modules/identity/identity-context.service.js'
 import { MembersService } from './modules/members/members.service.js'
+import { InvitationsService } from './modules/invitations/invitations.service.js'
 import { ObjectsService } from './modules/objects/objects.service.js'
 import { ShiftsService } from './modules/shifts/shifts.service.js'
 import { TimesheetsService } from './modules/timesheets/timesheets.service.js'
@@ -42,6 +43,7 @@ export class AppController {
     @Inject(ShiftsService) private readonly shiftsService: ShiftsService,
     @Inject(TimesheetsService) private readonly timesheetsService: TimesheetsService,
     @Inject(HealthService) private readonly healthService: HealthService,
+    @Inject(InvitationsService) private readonly invitationsService: InvitationsService,
   ) {}
 
   @Get('/health')
@@ -80,6 +82,43 @@ export class AppController {
   async logout(@Req() request: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply): Promise<void> {
     await this.authService.logout(sessionToken(request))
     reply.header('set-cookie', clearedSessionCookie())
+  }
+
+  @Get('/api/v1/invitations/:token')
+  async invitationPreview(@Param('token') token: string): Promise<InvitationPreviewResponse> {
+    return this.invitationsService.preview(token)
+  }
+
+  @Post('/api/v1/invitations/:token/register')
+  async registerInvitation(
+    @Param('token') token: string,
+    @Body() body: Partial<RegisterInvitationRequest>,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<RegisterInvitationResponse> {
+    const userId = await this.invitationsService.register(token, body)
+    const session = await this.authService.createSession(userId)
+    const context = await this.identityService.getContextForUser(userId, process.env.NODE_ENV === 'production' ? 'production' : 'development')
+    if (!context) throw new HttpException({ code: 'ACCESS_NOT_ASSIGNED', message: 'Доступ не создан.' }, HttpStatus.INTERNAL_SERVER_ERROR)
+    reply.header('set-cookie', sessionCookie(session.token, session.expiresAt))
+    return { context }
+  }
+
+  @Get('/api/v1/invitations')
+  async invitations(@Req() request: FastifyRequest): Promise<InvitationListResponse> {
+    const context = await this.authorizedContext(request, 'member.manage')
+    return this.invitationsService.list(context.organization.id)
+  }
+
+  @Post('/api/v1/invitations')
+  async createInvitation(@Req() request: FastifyRequest, @Body() body: Partial<CreateInvitationRequest>): Promise<CreateInvitationResponse> {
+    const context = await this.authorizedContext(request, 'member.manage')
+    return this.invitationsService.create(context.organization.id, context.user.id, body)
+  }
+
+  @Delete('/api/v1/invitations/:invitationId')
+  async revokeInvitation(@Req() request: FastifyRequest, @Param('invitationId') invitationId: string) {
+    const context = await this.authorizedContext(request, 'member.manage')
+    return { invitation: await this.invitationsService.revoke(context.organization.id, invitationId) }
   }
 
   @Get('/api/v1/me/context')

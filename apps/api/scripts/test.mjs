@@ -32,7 +32,7 @@ async function provision(client) {
   await client.query(`drop schema if exists ${testSchema} cascade`)
   await client.query(`create schema ${testSchema}`)
   await client.query(`set search_path to ${testSchema}, public`)
-  for (const migration of ['001_foundation.sql', '002_development_seed.sql', '003_auth_sessions.sql', '004_shifts_qr.sql']) {
+  for (const migration of ['001_foundation.sql', '002_development_seed.sql', '003_auth_sessions.sql', '004_shifts_qr.sql', '005_invitations.sql']) {
     await client.query(await readFile(path.join(migrationsRoot, migration), 'utf8'))
   }
 }

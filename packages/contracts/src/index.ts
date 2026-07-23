@@ -49,6 +49,7 @@ export interface OrganizationSummary {
 export interface UserSummary {
   id: string
   displayName: string
+  firstName?: string
   initials: string
   role: Role
 }
@@ -89,11 +90,53 @@ export interface LoginResponse {
   context: MeContextResponse
 }
 
+export interface CreateInvitationRequest {
+  role: 'foreman' | 'worker'
+  objectIds: string[]
+  expiresInDays: number
+  internalNote?: string
+}
+
+export interface InvitationSummary {
+  id: string
+  role: 'foreman' | 'worker'
+  objectIds: string[]
+  expiresAt: string
+  status: 'active' | 'used' | 'revoked' | 'expired'
+  createdAt: string
+}
+
+export interface CreateInvitationResponse {
+  invitation: InvitationSummary
+  link: string
+}
+
+export interface InvitationListResponse { invitations: InvitationSummary[] }
+
+export interface InvitationPreviewResponse {
+  organization: OrganizationSummary
+  role: 'foreman' | 'worker'
+  objects: Array<Pick<ObjectSummary, 'id' | 'name' | 'code'>>
+  expiresAt: string
+}
+
+export interface RegisterInvitationRequest {
+  firstName: string
+  lastName: string
+  middleName?: string
+  specialization: string
+  phone: string
+  password: string
+}
+
+export interface RegisterInvitationResponse { context: MeContextResponse }
+
 export interface MemberSummary {
   id: string
   displayName: string
   initials: string
   phone: string
+  specialization?: string
   role: Role
   status: 'active' | 'inactive'
   objectIds: string[]

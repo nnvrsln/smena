@@ -17,7 +17,7 @@ export interface CreatedSession {
   expiresAt: Date
 }
 
-function normalizePhone(value: string): string | null {
+export function normalizePhone(value: string): string | null {
   let digits = value.replace(/\D/gu, '')
   if (digits.length === 11 && digits.startsWith('8')) digits = `7${digits.slice(1)}`
   if (digits.length === 10) digits = `7${digits}`
@@ -34,6 +34,12 @@ async function verifyPassword(password: string, storedHash: string): Promise<boo
   const expected = Buffer.from(expectedHex, 'hex')
   const actual = await scrypt(password, salt, expected.length) as Buffer
   return expected.length === actual.length && timingSafeEqual(expected, actual)
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString('hex')
+  const hash = await scrypt(password, salt, 64) as Buffer
+  return `scrypt$${salt}$${hash.toString('hex')}`
 }
 
 @Injectable()
@@ -64,14 +70,18 @@ export class AuthService implements OnModuleDestroy {
     const credential = result.rows[0]
     if (!credential || !(await verifyPassword(password, credential.password_hash))) return null
 
+    return this.createSession(credential.id)
+  }
+
+  async createSession(userId: string): Promise<CreatedSession> {
     const token = randomBytes(32).toString('base64url')
     const expiresAt = new Date(Date.now() + sessionLifetimeMs)
     await this.pool.query(
       `insert into auth_sessions (user_id, token_hash, expires_at)
        values ($1, $2, $3)`,
-      [credential.id, tokenHash(token), expiresAt],
+      [userId, tokenHash(token), expiresAt],
     )
-    return { token, userId: credential.id, expiresAt }
+    return { token, userId, expiresAt }
   }
 
   async authenticate(token: string | undefined): Promise<string | null> {
