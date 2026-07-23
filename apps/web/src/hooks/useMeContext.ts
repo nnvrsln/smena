@@ -13,18 +13,24 @@ export function useMeContext(reloadKey: number): ContextState {
 
   useEffect(() => {
     const controller = new AbortController()
+    let active = true
     setState({ status: 'loading', data: null, error: null })
-    loadMeContext(controller.signal)
-      .then((data) => setState({ status: 'ready', data, error: null }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
+    const refresh = async (initial: boolean) => {
+      try {
+        const data = await loadMeContext(controller.signal)
+        if (active) setState({ status: 'ready', data, error: null })
+      } catch (error: unknown) {
+        if (!active || controller.signal.aborted || !initial) return
         if (error instanceof ApiRequestError && error.status === 401) {
           setState({ status: 'unauthenticated', data: null, error: null })
           return
         }
         setState({ status: 'error', data: null, error: error instanceof Error ? error.message : 'Не удалось загрузить контекст' })
-      })
-    return () => controller.abort()
+      }
+    }
+    void refresh(true)
+    const timer = window.setInterval(() => void refresh(false), 5000)
+    return () => { active = false; window.clearInterval(timer); controller.abort() }
   }, [reloadKey])
 
   return state

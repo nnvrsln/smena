@@ -15,8 +15,8 @@ export default function App() {
   }
 
   if (context.status === 'unauthenticated') return <LoginScreen onSuccess={() => setReloadKey((value) => value + 1)} />
-  if (context.status === 'loading') return <div className="production-stage"><StateCard icon={<LoaderCircle className="spin" />} title="Проверяем сессию" body="Смена восстанавливает защищённый доступ к рабочему кабинету." /></div>
-  if (context.status === 'error') return <div className="production-stage"><StateCard icon={<AlertTriangle />} title="API недоступен" body={context.error} /></div>
+  if (context.status === 'loading') return <div className="production-stage"><StateCard icon={<LoaderCircle className="spin" />} title="Открываем кабинет" body="Загружаем актуальные данные." /></div>
+  if (context.status === 'error') return <div className="production-stage"><StateCard icon={<AlertTriangle />} title="Не удалось подключиться" body={context.error} /></div>
   return <div className="production-stage production-stage--workspace"><RoleWorkspace context={context.data} onLogout={signOut} /></div>
 }
 

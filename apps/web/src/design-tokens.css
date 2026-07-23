@@ -14,4 +14,20 @@
   --type-page-title: clamp(30px, 2.4vw, 38px);
   --leading-caption: 1.35;
   --leading-body: 1.55;
+
+  /* Contractor workspace composition. */
+  --workspace-page-gap: 20px;
+  --workspace-page-gap-mobile: 14px;
+  --workspace-hero-min-height: 174px;
+  --workspace-hero-padding: 28px 30px;
+  --workspace-hero-radius: 24px;
+  --workspace-card-radius: 20px;
+  --workspace-summary-radius: 17px;
+  --workspace-grid-gap: 16px;
+  --workspace-border: #dfe7f0;
+  --workspace-surface: #ffffff;
+  --workspace-text: #17243a;
+  --workspace-muted: #607089;
+  --workspace-card-shadow: 0 10px 30px rgba(27, 60, 98, 0.07);
+  --workspace-hero-shadow: 0 16px 42px rgba(28, 78, 130, 0.08);
 }

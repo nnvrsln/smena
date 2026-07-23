@@ -125,8 +125,8 @@ export class PostgresAccessRepository implements AccessRepository, OnModuleDestr
          o.id::text,
          o.name,
          o.code,
-         coalesce(s.present_workers, 0)::integer as present_workers,
-         coalesce(s.planned_workers, 0)::integer as planned_workers,
+         coalesce(attendance.present_workers, 0)::integer as present_workers,
+         coalesce(assignments.assigned_workers, 0)::integer as planned_workers,
          coalesce(s.day_progress, 0)::integer as day_progress,
          coalesce(s.issue_count, 0)::integer as issue_count
        from objects o
@@ -134,6 +134,25 @@ export class PostgresAccessRepository implements AccessRepository, OnModuleDestr
          on s.organization_id = o.organization_id
         and s.object_id = o.id
         and s.summary_date = current_date
+       left join lateral (
+         select count(*)::integer as present_workers
+         from shifts active_shift
+         where active_shift.organization_id = o.organization_id
+           and active_shift.object_id = o.id
+           and active_shift.status = 'open'
+       ) attendance on true
+       left join lateral (
+         select count(*)::integer as assigned_workers
+         from object_memberships assigned
+         join memberships member
+           on member.organization_id = assigned.organization_id
+          and member.user_id = assigned.user_id
+          and member.status = 'active'
+          and member.role = 'worker'
+         where assigned.organization_id = o.organization_id
+           and assigned.object_id = o.id
+           and assigned.status = 'active'
+       ) assignments on true
        where o.organization_id = $1
          and o.status = 'active'
          ${objectScope}

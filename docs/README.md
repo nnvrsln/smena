@@ -23,6 +23,7 @@
 ## Проектирование и реализация
 
 - [`SCREEN_MAP.md`](./SCREEN_MAP.md) — карта экранов, навигации и responsive-состояний трёх ролей.
+- [`UI_STANDARD.md`](./UI_STANDARD.md) — обязательный порядок сверки документов и единый UI/UX-стандарт production-экранов.
 - [`USER_FLOWS.md`](./USER_FLOWS.md) — пошаговые пользовательские сценарии.
 - [`DATA_MODEL.md`](./DATA_MODEL.md) — сущности, связи, поля и ограничения.
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — frontend, backend, хранение, sync и развёртывание.

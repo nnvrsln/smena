@@ -1,11 +1,13 @@
 import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Post, Put, Query, Req, Res } from '@nestjs/common'
-import type { ApiError, LoginRequest, LoginResponse, MemberListResponse, Permission, StartShiftRequest, UpdateMemberObjectsRequest, UpdateMemberObjectsResponse } from '@smena/contracts'
+import type { ApiError, CreateObjectRequest, EndShiftRequest, LoginRequest, LoginResponse, MemberListResponse, MemberTimesheetHistoryResponse, ObjectMutationResponse, Permission, StartShiftRequest, TimesheetDayDetailResponse, TimesheetDayListResponse, UpdateMemberObjectsRequest, UpdateMemberObjectsResponse, UpdateObjectMembersRequest, UpdateObjectMembersResponse, UpdateObjectRequest } from '@smena/contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { can } from './modules/access/policy.js'
 import { AuthService } from './modules/auth/auth.service.js'
 import { IdentityContextService } from './modules/identity/identity-context.service.js'
 import { MembersService } from './modules/members/members.service.js'
+import { ObjectsService } from './modules/objects/objects.service.js'
 import { ShiftsService } from './modules/shifts/shifts.service.js'
+import { TimesheetsService } from './modules/timesheets/timesheets.service.js'
 
 const sessionCookieName = 'smena_session'
 
@@ -35,7 +37,9 @@ export class AppController {
     @Inject(IdentityContextService) private readonly identityService: IdentityContextService,
     @Inject(AuthService) private readonly authService: AuthService,
     @Inject(MembersService) private readonly membersService: MembersService,
+    @Inject(ObjectsService) private readonly objectsService: ObjectsService,
     @Inject(ShiftsService) private readonly shiftsService: ShiftsService,
+    @Inject(TimesheetsService) private readonly timesheetsService: TimesheetsService,
   ) {}
 
   @Get('/health')
@@ -105,11 +109,99 @@ export class AppController {
     return this.shiftsService.current(userId)
   }
 
+  @Post('/api/v1/objects')
+  async createObject(@Req() request: FastifyRequest, @Body() body: Partial<CreateObjectRequest>): Promise<ObjectMutationResponse> {
+    const context = await this.authorizedContext(request, 'object.manage')
+    return { object: await this.objectsService.create(context.organization.id, this.validObjectInput(body)) }
+  }
+
+  @Put('/api/v1/objects/:objectId')
+  async updateObject(@Req() request: FastifyRequest, @Param('objectId') objectId: string, @Body() body: Partial<UpdateObjectRequest>): Promise<ObjectMutationResponse> {
+    const context = await this.authorizedContext(request, 'object.manage')
+    return { object: await this.objectsService.update(context.organization.id, objectId, this.validObjectInput(body)) }
+  }
+
+  @Put('/api/v1/objects/:objectId/members')
+  async updateObjectMembers(
+    @Req() request: FastifyRequest,
+    @Param('objectId') objectId: string,
+    @Body() body: Partial<UpdateObjectMembersRequest>,
+  ): Promise<UpdateObjectMembersResponse> {
+    const context = await this.authorizedContext(request, 'member.manage')
+    if (!Array.isArray(body.memberIds) || body.memberIds.some((id) => typeof id !== 'string')) {
+      throw new HttpException({ code: 'INVALID_MEMBER_IDS', message: 'Передайте корректный список сотрудников.' }, HttpStatus.BAD_REQUEST)
+    }
+    return { members: await this.membersService.updateObjectMembers(context.organization.id, objectId, body.memberIds) }
+  }
+
+  @Get('/api/v1/shifts/today')
+  async todayShift(@Req() request: FastifyRequest) {
+    const userId = await this.authService.authenticate(sessionToken(request))
+    if (!userId) throw new HttpException({ code: 'SESSION_REQUIRED', message: 'Войдите, чтобы продолжить.' }, HttpStatus.UNAUTHORIZED)
+    return this.shiftsService.today(userId)
+  }
+
   @Post('/api/v1/shifts/start')
   async startShift(@Req() request: FastifyRequest, @Body() body: Partial<StartShiftRequest>) {
     const context = await this.authorizedContext(request, 'shift.manage.self')
     const userId = context.user.id
     return this.shiftsService.start(userId, context.organization.id, body)
+  }
+
+  @Post('/api/v1/shifts/end')
+  async endShift(@Req() request: FastifyRequest, @Body() body: Partial<EndShiftRequest>) {
+    const context = await this.authorizedContext(request, 'shift.manage.self')
+    return this.shiftsService.end(context.user.id, context.organization.id, body)
+  }
+
+  @Get('/api/v1/timesheet/days')
+  async timesheetDays(@Req() request: FastifyRequest, @Query('date') date?: string): Promise<TimesheetDayListResponse> {
+    const context = await this.timesheetContext(request)
+    const selectedDate = date ?? new Date().toISOString().slice(0, 10)
+    if (!/^\d{4}-\d{2}-\d{2}$/u.test(selectedDate) || Number.isNaN(new Date(`${selectedDate}T00:00:00Z`).getTime())) throw new HttpException({ code: 'INVALID_TIMESHEET_DATE', message: 'Передайте дату в формате YYYY-MM-DD.' }, HttpStatus.BAD_REQUEST)
+    return this.timesheetsService.list(context.organization.id, context.objects.map((object) => object.id), selectedDate)
+  }
+
+  @Get('/api/v1/timesheet/members/:memberId')
+  async memberTimesheetHistory(
+    @Req() request: FastifyRequest,
+    @Param('memberId') memberId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ): Promise<MemberTimesheetHistoryResponse> {
+    const context = await this.timesheetContext(request)
+    const defaultTo = new Date().toISOString().slice(0, 10)
+    const defaultFromDate = new Date(`${defaultTo}T00:00:00Z`)
+    defaultFromDate.setUTCDate(defaultFromDate.getUTCDate() - 30)
+    const selectedFrom = from ?? defaultFromDate.toISOString().slice(0, 10)
+    const selectedTo = to ?? defaultTo
+    if (!this.validIsoDate(selectedFrom) || !this.validIsoDate(selectedTo)) {
+      throw new HttpException({ code: 'INVALID_TIMESHEET_RANGE', message: 'Передайте период в формате YYYY-MM-DD.' }, HttpStatus.BAD_REQUEST)
+    }
+    const rangeDays = (Date.parse(`${selectedTo}T00:00:00Z`) - Date.parse(`${selectedFrom}T00:00:00Z`)) / 86_400_000
+    if (rangeDays < 0 || rangeDays > 62) {
+      throw new HttpException({ code: 'INVALID_TIMESHEET_RANGE', message: 'Период истории должен содержать не более 63 дней.' }, HttpStatus.BAD_REQUEST)
+    }
+    const history = await this.timesheetsService.memberHistory(
+      context.organization.id,
+      context.objects.map((object) => object.id),
+      memberId,
+      selectedFrom,
+      selectedTo,
+      context.user.role === 'contractor',
+    )
+    return {
+      member: await this.membersService.get(context.organization.id, memberId),
+      from: selectedFrom,
+      to: selectedTo,
+      ...history,
+    }
+  }
+
+  @Get('/api/v1/timesheet/days/:shiftId')
+  async timesheetDay(@Req() request: FastifyRequest, @Param('shiftId') shiftId: string): Promise<TimesheetDayDetailResponse> {
+    const context = await this.timesheetContext(request)
+    return { day: await this.timesheetsService.detail(context.organization.id, context.objects.map((object) => object.id), shiftId) }
   }
 
   @Put('/api/v1/members/:memberId/objects')
@@ -134,5 +226,28 @@ export class AppController {
       throw new HttpException({ code: 'ACCESS_DENIED', message: 'Недостаточно прав для этого действия.' }, HttpStatus.FORBIDDEN)
     }
     return context
+  }
+
+  private async timesheetContext(request: FastifyRequest) {
+    const userId = await this.authService.authenticate(sessionToken(request))
+    if (!userId) throw new HttpException({ code: 'SESSION_REQUIRED', message: 'Войдите, чтобы продолжить.' }, HttpStatus.UNAUTHORIZED)
+    const context = await this.identityService.getContextForUser(userId, process.env.NODE_ENV === 'production' ? 'production' : 'development')
+    const permission: Permission = context?.user.role === 'contractor' ? 'shift.read.organization' : 'shift.read.team'
+    if (!context || !can(context.user.role, permission)) throw new HttpException({ code: 'ACCESS_DENIED', message: 'Недостаточно прав для просмотра табеля.' }, HttpStatus.FORBIDDEN)
+    return context
+  }
+
+  private validObjectInput(body: Partial<CreateObjectRequest>): CreateObjectRequest {
+    const name = typeof body.name === 'string' ? body.name.trim() : ''
+    const code = typeof body.code === 'string' ? body.code.trim() : ''
+    if (name.length < 3 || name.length > 80) throw new HttpException({ code: 'INVALID_OBJECT_NAME', message: 'Название объекта должно содержать от 3 до 80 символов.' }, HttpStatus.BAD_REQUEST)
+    if (code.length < 2 || code.length > 40) throw new HttpException({ code: 'INVALID_OBJECT_CODE', message: 'Обозначение должно содержать от 2 до 40 символов.' }, HttpStatus.BAD_REQUEST)
+    return { name, code }
+  }
+
+  private validIsoDate(value: string): boolean {
+    if (!/^\d{4}-\d{2}-\d{2}$/u.test(value)) return false
+    const parsed = new Date(`${value}T00:00:00Z`)
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
   }
 }
