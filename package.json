@@ -21,6 +21,7 @@
     "db:migrate:verify": "node --env-file-if-exists=.env apps/api/scripts/verify-migrations.mjs",
     "db:backup": "node --env-file-if-exists=.env apps/api/scripts/backup.mjs",
     "db:restore:test": "node --env-file-if-exists=.env apps/api/scripts/restore.mjs",
+    "db:restore:verify": "node --env-file-if-exists=.env apps/api/scripts/verify-restore.mjs",
     "db:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/postgres-start.ps1",
     "db:status": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/postgres-status.ps1",
     "db:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/postgres-stop.ps1",

@@ -16,12 +16,15 @@ npm run db:migrate
 npm run check
 npm test
 npm run build
+npm run db:restore:verify
 npm run start -w @smena/api
 ```
 
 Повторный `npm run db:migrate` должен пропустить уже применённые файлы. Изменение применённого SQL останавливает миграцию по несовпадению checksum.
 
 `db:migrate:verify` по умолчанию проверяет миграции в пустой временной схеме с правами прикладной роли. В CI оператор передаёт отдельный `MIGRATION_ADMIN_URL`, и проверка выполняется в отдельной временной БД. Административный URL не передаётся runtime API.
+
+`db:restore:verify` создаёт backup текущей тестовой БД, восстанавливает его только в `smena_restore_test`, проверяет контрольные данные, повторяет API-тесты на восстановленном контуре и удаляет временную БД и dump. Команда требует отдельный `MIGRATION_ADMIN_URL`.
 
 ## 3. Проверка готовности
 
