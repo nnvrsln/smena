@@ -77,7 +77,7 @@ function ContractorWorkspace({ context, onLogout }: { context: MeContextResponse
         </header>
 
         <div className="contractor-content">
-          {memberProfile ? <MemberProfileView memberId={memberProfile.id} objects={managedObjects} onBack={() => { setActiveSection(memberProfile.returnSection); setMemberProfile(null) }} /> : activeSection === 'objects' ? <ContractorObjectsView sourceObjects={managedObjects} search={search} editor={objectEditor} setEditor={setObjectEditor} notify={notify} onObjectChanged={(saved) => setManagedObjects((current) => current.some((object) => object.id === saved.id) ? current.map((object) => object.id === saved.id ? saved : object) : [...current, saved])} /> : activeSection === 'team' ? <ContractorTeamView context={{ ...context, objects: managedObjects }} search={search} onClearSearch={() => setSearch('')} notify={notify} onOpenMember={(memberId) => { setSearch(''); setMemberProfile({ id: memberId, returnSection: 'team' }) }} onAssignmentChanged={(previous, saved) => {
+          {memberProfile ? <MemberProfileView memberId={memberProfile.id} objects={managedObjects} onBack={() => { setActiveSection(memberProfile.returnSection); setMemberProfile(null) }} /> : activeSection === 'objects' ? <ContractorObjectsView sourceObjects={managedObjects} search={search} editor={objectEditor} setEditor={setObjectEditor} notify={notify} onObjectChanged={(saved) => setManagedObjects((current) => current.some((object) => object.id === saved.id) ? current.map((object) => object.id === saved.id ? saved : object) : [...current, saved])} /> : activeSection === 'team' ? <ContractorTeamView context={{ ...context, objects: managedObjects }} search={search} notify={notify} onOpenMember={(memberId) => { setSearch(''); setMemberProfile({ id: memberId, returnSection: 'team' }) }} onAssignmentChanged={(previous, saved) => {
             if (saved.role !== 'worker') return
             setManagedObjects((current) => current.map((object) => {
               const before = previous.objectIds.includes(object.id)
@@ -119,10 +119,9 @@ function formatMemberPhone(phone: string) {
   return phone
 }
 
-function ContractorTeamView({ context, search, onClearSearch, notify, onOpenMember, onAssignmentChanged }: {
+function ContractorTeamView({ context, search, notify, onOpenMember, onAssignmentChanged }: {
   context: MeContextResponse
   search: string
-  onClearSearch: () => void
   notify: (message: string) => void
   onOpenMember: (memberId: string) => void
   onAssignmentChanged: (previous: MemberSummary, saved: MemberSummary) => void
@@ -202,14 +201,9 @@ function ContractorTeamView({ context, search, onClearSearch, notify, onOpenMemb
     setEditingId(null)
   }
 
-  const resetDirectory = () => {
-    setRoleFilter('all')
-    onClearSearch()
-  }
-
   return <>
   <section className="contractor-page contractor-team">
-    <header className="contractor-page__hero contractor-team__hero"><div><span>Люди и назначения</span><h1>Команда организации</h1><p>Смотрите состав команды и назначайте сотрудников на объекты.</p></div><div className="contractor-team__hero-actions"><button className="is-secondary" type="button" onClick={resetDirectory}><Users size={18} />Показать всех</button><button type="button" onClick={() => setInviteOpen(true)}><Plus size={18} />Пригласить</button></div></header>
+    <header className="contractor-page__hero contractor-team__hero"><div><span>Люди и назначения</span><h1>Команда организации</h1><p>Смотрите состав команды и назначайте сотрудников на объекты.</p></div><div className="contractor-team__hero-actions"><button type="button" onClick={() => setInviteOpen(true)}><Plus size={18} />Пригласить</button></div></header>
     <div className="contractor-page__summary contractor-team__summary" aria-label="Сводка по команде"><article><span className="is-blue"><Users size={19} /></span><div><b>{members.length}</b><small>сотрудников</small></div></article><article><span className="is-green"><HardHat size={19} /></span><div><b>{members.filter((member) => member.role === 'worker').length}</b><small>рабочих</small></div></article><article><span className="is-orange"><Building2 size={19} /></span><div><b>{context.objects.length}</b><small>активных объектов</small></div></article></div>
     <div className="contractor-page__toolbar contractor-team__toolbar"><div><b>{search.trim() || roleFilter !== 'all' ? `Найдено: ${visibleMembers.length}` : 'Все сотрудники'}</b><small>{visibleMembers.length} в списке</small></div><div className="contractor-team__filters" aria-label="Фильтр сотрудников"><button className={roleFilter === 'all' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('all')}>Все</button><button className={roleFilter === 'foreman' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('foreman')}>Бригадиры</button><button className={roleFilter === 'worker' ? 'is-active' : ''} type="button" onClick={() => setRoleFilter('worker')}>Рабочие</button></div></div>
     {error ? <div className="contractor-team__error"><AlertTriangle size={17} />{error}</div> : null}
